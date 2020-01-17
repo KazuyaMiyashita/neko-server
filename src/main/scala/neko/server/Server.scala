@@ -3,13 +3,15 @@ package neko.server
 import java.net.ServerSocket
 import scala.io.BufferedSource
 import java.io.{BufferedWriter, OutputStreamWriter}
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class Server(routes: Routes) {
 
   println("start >>>")
 
   val server = new ServerSocket(2200)
-  try {
+  Future {
     while (true) {
       val socket = server.accept()
       val in     = new BufferedSource(socket.getInputStream())
@@ -33,10 +35,10 @@ class Server(routes: Routes) {
       println("**response**")
       println(response.writeString)
     }
-  } finally {
-    server.close()
   }
 
+  io.StdIn.readLine()
+  server.close()
   println("<<< end")
 
 }
