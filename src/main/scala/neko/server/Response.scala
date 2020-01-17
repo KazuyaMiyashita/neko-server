@@ -6,11 +6,15 @@ case class Response(
 ) {
 
   def writeString = {
-    val statusLine = s"HTTP/1.1 ${status.writeString}\n"
-    val withBody = message.map { mes => 
-      s"Content-Type: text/plain\n\n${mes}"
-    }.getOrElse("")
-    statusLine + withBody
+
+      val msg = message.getOrElse("")
+
+      s"""HTTP/1.1 ${status.writeString}
+         |Content-Length: ${msg.length()}
+         |Content-Type: text/plain"
+         |
+         |${msg}
+         |""".stripMargin
   }
 
 }
