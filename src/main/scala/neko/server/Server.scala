@@ -10,27 +10,29 @@ class Server(routes: Routes) {
 
   val server = new ServerSocket(2200)
   try {
-    val socket = server.accept()
-    val in = new BufferedSource(socket.getInputStream())
-    val header = RequestHeaderParser.parse(in.getLines.takeWhile(_.nonEmpty).toList)
-    val body = header.contentLength match {
-      case None => ""
-      case Some(length) => in.take(length).mkString
+    while (true) {
+      val socket = server.accept()
+      val in = new BufferedSource(socket.getInputStream())
+      val lines = in.getLines.takeWhile(_.nonEmpty).toList
+      println("**request**")
+      lines.foreach(println)
+      val header = RequestHeaderParser.parse(lines)
+      val body = header.contentLength match {
+        case None => ""
+        case Some(length) => in.take(length).mkString
+      }
+      println(body)
+
+      val request = Request(header, body)
+      val response = routes(request)
+
+      val out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))
+      out.write(response.writeString)
+      out.flush()
+
+      println("**response**")
+      println(response.writeString)
     }
-    val request = Request(header, body)
-    val response = routes(request)
-
-    val out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))
-    out.write(response.writeString)
-
-    println("header:")
-    println(header)
-    println("body: [%s]".format(body))
-
-    println("response:")
-    println(response.writeString)
-    out.flush()
-
   } finally {
     server.close()
   }
