@@ -6,7 +6,7 @@ case class Routes(routes: Route*) {
     val handler: Option[Request => Response] = routes
       .find(route => route.method == request.header.method && route.url == request.header.url)
       .map(_.handler)
-    
+
     handler.map(_.apply(request)).getOrElse(Response(NOT_FOUND))
   }
 

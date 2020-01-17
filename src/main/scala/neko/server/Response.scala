@@ -1,15 +1,15 @@
 package neko.server
 
 case class Response(
-  status: Status,
-  message: Option[String]
+    status: Status,
+    message: Option[String]
 ) {
 
   def writeString = {
 
-      val msg = message.getOrElse("")
+    val msg = message.getOrElse("")
 
-      s"""HTTP/1.1 ${status.writeString}
+    s"""HTTP/1.1 ${status.writeString}
          |Content-Length: ${msg.length()}
          |Content-Type: text/plain"
          |
@@ -19,7 +19,7 @@ case class Response(
 }
 
 object Response {
-  def apply(status: Status) = new Response(status, None)
+  def apply(status: Status)                  = new Response(status, None)
   def apply(status: Status, message: String) = new Response(status, Some(message))
 }
 

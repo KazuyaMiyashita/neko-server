@@ -7,10 +7,10 @@ trait Method {
 }
 object Method {
   def fromString(m: String): Method = m match {
-    case "GET" => GET
+    case "GET"  => GET
     case "POST" => POST
-    case _ => throw new Exception("Method Not Allowed")
+    case _      => throw new Exception("Method Not Allowed")
   }
 }
-object GET extends Method
+object GET  extends Method
 object POST extends Method
