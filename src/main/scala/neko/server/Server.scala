@@ -12,7 +12,6 @@ class Server(routes: Routes) {
   try {
     val socket = server.accept()
     val in = new BufferedSource(socket.getInputStream())
-
     val header = RequestHeaderParser.parse(in.getLines.takeWhile(_.nonEmpty).toList)
     val body = header.contentLength match {
       case None => ""
@@ -30,7 +29,7 @@ class Server(routes: Routes) {
 
     println("response:")
     println(response.writeString)
-
+    out.flush()
 
   } finally {
     server.close()
