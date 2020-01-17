@@ -1,7 +1,5 @@
 package neko.json
 
-import language.experimental.macros
-
 object Json {
 
   def str(value: String): JsValue    = JsString(value)
@@ -15,9 +13,7 @@ object Json {
   def format(value: JsValue): String                = JsonFormatter.spaces2(value)
 
   def decode[T](js: JsValue)(implicit decoder: JsonDecoder[T]): Option[T] = decoder.decode(js)
-  def autoDecoder[T]: JsonDecoder[T] = macro JsonAutoDecoderImpl[T]
 
   def encode[T](value: T)(implicit encoder: JsonEncoder[T]): JsValue = encoder.encode(value)
-  def autoEncoder[T]: JsonEncoder[T] = macro JsonAutoEncoderImpl[T]
 
 }

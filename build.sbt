@@ -17,7 +17,6 @@ lazy val root = (project in file("."))
     commonSettings,
     libraryDependencies += scalaTest % Test,
     libraryDependencies += scalaParser,
-    libraryDependencies += scalaRefrect
   )
 
 // See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for instructions on how to publish to Sonatype.
