@@ -13,8 +13,7 @@ case class Response(
          |Content-Length: ${msg.length()}
          |Content-Type: text/plain"
          |
-         |${msg}
-         |""".stripMargin
+         |${msg}""".stripMargin
   }
 
 }
