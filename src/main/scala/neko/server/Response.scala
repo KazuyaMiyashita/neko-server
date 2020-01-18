@@ -2,39 +2,57 @@ package neko.server
 
 case class Response(
     status: Status,
-    message: Option[String],
-    contentType: Option[String]
+    headers: Map[String, String],
+    body: Option[String]
 ) {
 
-  def writeString = {
+  def withContentType(contentType: String) = Response(
+    status,
+    headers + (("Content-Type") -> contentType),
+    body
+  )
 
-    val msg = message.getOrElse("")
+  def withHeader(key: String, value: String) = Response(
+    status,
+    headers + (key -> value),
+    body
+  )
 
-    s"""HTTP/1.1 ${status.writeString}
-         |Content-Length: ${msg.length()}
-         |Content-Type: ${contentType.getOrElse("text/plain")}
-         |
-         |${msg}""".stripMargin
+  def view: String = {
+    import scala.collection.mutable.StringBuilder
+    val str = new StringBuilder
+    str append s"HTTP/1.1 ${status.view}\n"
+    str append headers.map({ case (key, value) => key + ": " + value }).mkString("\n") + "\n\n"
+    body.foreach { msg =>
+      str append msg
+    }
+    str.mkString
   }
 
 }
 
 object Response {
-  def apply(status: Status)                  = new Response(status, None, None)
-  def apply(status: Status, message: String) = new Response(status, Some(message), None)
-  def apply(status: Status, message: String, contentType: String) =
-    new Response(status, Some(message), Some(contentType))
+
+  def apply(status: Status) = {
+    val headers = Map(("Content-Length" -> "0"))
+    new Response(status, headers, None)
+  }
+  def apply(status: Status, body: String) = {
+    val headers = Map(("Content-Length" -> body.getBytes.length.toString))
+    new Response(status, headers, Some(body))
+  }
+
 }
 
 trait Status {
-  def writeString: String
+  def view: String
 }
 object OK extends Status {
-  override def writeString = "200 OK"
+  override def view = "200 OK"
 }
 object BAD_REQUEST extends Status {
-  override def writeString = "400 Bad Request"
+  override def view = "400 Bad Request"
 }
 object NOT_FOUND extends Status {
-  override def writeString = "404 Not Found"
+  override def view = "404 Not Found"
 }

@@ -12,28 +12,32 @@ class Server(routes: Routes) {
 
   val server = new ServerSocket(2200)
   Future {
-    while (true) {
-      val socket = server.accept()
-      val in     = new BufferedSource(socket.getInputStream())
-      val lines  = in.getLines.takeWhile(_.nonEmpty).toList
-      println("**request**")
-      lines.foreach(println)
-      val header = RequestHeaderParser.parse(lines)
-      val body = header.contentLength match {
-        case None         => ""
-        case Some(length) => in.take(length).mkString
+    try {
+      while (true) {
+        val socket = server.accept()
+        val in     = new BufferedSource(socket.getInputStream())
+        val lines  = in.getLines.takeWhile(_.nonEmpty).toList
+        println("**request**")
+        lines.foreach(println)
+        val header = RequestHeaderParser.parse(lines)
+        val body = header.contentLength match {
+          case None         => ""
+          case Some(length) => in.take(length).mkString
+        }
+        println(body)
+
+        val request  = Request(header, body)
+        val response = routes(request)
+
+        val out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))
+        out.write(response.view)
+        out.flush()
+
+        println("**response**")
+        println(response.view)
       }
-      println(body)
-
-      val request  = Request(header, body)
-      val response = routes(request)
-
-      val out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))
-      out.write(response.writeString)
-      out.flush()
-
-      println("**response**")
-      println(response.writeString)
+    } catch {
+      case e: Throwable => e.printStackTrace()
     }
   }
 
