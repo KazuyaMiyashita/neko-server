@@ -19,6 +19,7 @@ class Server(routes: Routes) {
         val lines  = in.getLines.takeWhile(_.nonEmpty).toList
         println("**request**")
         lines.foreach(println)
+        println()
         val header = RequestHeaderParser.parse(lines)
         val body = header.contentLength match {
           case None         => ""
@@ -37,7 +38,7 @@ class Server(routes: Routes) {
         println(response.view)
       }
     } catch {
-      case e: Throwable => e.printStackTrace()
+      case e: java.net.SocketException => println("[Socket closed]")
     }
   }
 

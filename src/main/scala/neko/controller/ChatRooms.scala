@@ -12,7 +12,6 @@ object ChatRooms {
     val json                = Json.arr(rooms.map(r => Json.str(r)): _*)
     Response(OK, Json.format(json))
       .withContentType("application/json")
-      .withHeader("Access-Control-Allow-Origin", "*")
   }
 
   def create(request: Request): Response = {
@@ -22,7 +21,6 @@ object ChatRooms {
       case Right(rn) => {
         ChatMaster.table += ChatMaster(rn, "チャットマスター", "000000", "ルームが作成されました", System.currentTimeMillis)
         Response(OK)
-          .withHeader("Access-Control-Allow-Origin", "*")
       }
     }
   }
@@ -30,13 +28,10 @@ object ChatRooms {
   def messageList(request: Request): Response = {
     val room                      = request.header.getPath.substring("/rooms/".length)
     val maybeOffset: Option[Long] = request.header.getQueries.get("offset").map(_.toLong)
-    println(request.header.getQueries)
-
-    println(request)
 
     val messages = maybeOffset match {
       case None         => ChatMaster.table.toList.filter(_.room == room)
-      case Some(offset) => ChatMaster.table.toList.filter(_.room == room).filter(_.timestamp >= offset)
+      case Some(offset) => ChatMaster.table.toList.filter(_.room == room).filter(_.timestamp > offset)
     }
     val messagesJson = Json.arr(messages.toList.map { mes =>
       Json.obj(
@@ -46,9 +41,7 @@ object ChatRooms {
         "timestamp" -> Json.num(mes.timestamp)
       )
     }: _*)
-    Response(OK, Json.format(messagesJson))
-      .withContentType("application/json")
-      .withHeader("Access-Control-Allow-Origin", "*")
+    Response(OK, Json.format(messagesJson)).withContentType("application/json")
   }
 
   def messageSend(request: Request): Response = {
@@ -70,7 +63,6 @@ object ChatRooms {
       case Some(message) => {
         ChatMaster.table += message
         Response(OK)
-          .withHeader("Access-Control-Allow-Origin", "*")
       }
     }
   }

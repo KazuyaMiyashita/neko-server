@@ -1,6 +1,6 @@
 package neko.server
 
-case class Response(
+case class Response private (
     status: Status,
     headers: Map[String, String],
     body: Option[String]
@@ -34,11 +34,19 @@ case class Response(
 object Response {
 
   def apply(status: Status) = {
-    val headers = Map(("Content-Length" -> "0"))
+    val headers = Map(
+      ("Content-Length"              -> "0"),
+      ("Access-Control-Allow-Origin" -> "*"),
+      ("Connection"                  -> "close")
+    )
     new Response(status, headers, None)
   }
   def apply(status: Status, body: String) = {
-    val headers = Map(("Content-Length" -> body.getBytes.length.toString))
+    val headers = Map(
+      ("Content-Length"              -> body.getBytes.length.toString),
+      ("Access-Control-Allow-Origin" -> "*"),
+      ("Connection"                  -> "close")
+    )
     new Response(status, headers, Some(body))
   }
 
