@@ -19,4 +19,12 @@ lazy val root = (project in file("."))
     libraryDependencies += scalaParser,
   )
 
+lazy val chat = (project in file("chat"))
+  .settings(
+    name := "neko-server-chat",
+    commonSettings,
+    libraryDependencies += scalaTest % Test,
+  )
+  .dependsOn(root)
+
 // See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for instructions on how to publish to Sonatype.

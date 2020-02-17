@@ -1,0 +1,11 @@
+version: '3'
+services:
+  mysql:
+    image: mysql:latest
+    volumes:
+      - ./mysql/db:/docker-entrypoint-initdb.d  #初期データ
+    environment:
+      - "MYSQL_DATABASE=db"
+      - "MYSQL_ALLOW_EMPTY_PASSWORD=yes"
+    ports:
+      - "13306:3306"
