@@ -17,7 +17,7 @@ class UserController(
 
     val result = for {
       form <- UserCreateRequest.parse(request.body).toRight(Response(BAD_REQUEST))
-      user <- userRepository.create(form.name).left.map { _ =>
+      user <- userRepository.insert(form.name).left.map { _ =>
         Response(INTERNAL_SERVER_ERROR)
       }
     } yield {

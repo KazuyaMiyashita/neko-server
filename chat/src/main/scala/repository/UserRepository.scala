@@ -4,6 +4,8 @@ import neko.chat.entity.User
 
 trait UserRepository {
 
-  def create(name: String): Either[Throwable, User]
+  def insert(name: String): Either[Throwable, User]
+
+  def fetchBy(userId: String): Option[User]
 
 }

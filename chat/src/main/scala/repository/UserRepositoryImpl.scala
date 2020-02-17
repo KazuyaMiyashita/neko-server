@@ -5,12 +5,13 @@ import java.util.UUID
 import java.sql.Timestamp
 import java.sql.SQLException
 
-import neko.jdbc.DBPool
+import neko.core.jdbc.DBPool
 import neko.chat.entity.User
+import java.sql.ResultSet
 
 class UserRepositoryImpl(pool: DBPool, clock: Clock) extends UserRepository {
 
-  override def create(name: String): Either[Throwable, User] = {
+  override def insert(name: String): Either[Throwable, User] = {
     val id = UUID.randomUUID().toString
     val query =
       """insert into Users(`id`, `name`, `created_at`) values (?, ?, ?)"""
@@ -34,6 +35,30 @@ class UserRepositoryImpl(pool: DBPool, clock: Clock) extends UserRepository {
       conn.close()
     }
 
+  }
+
+  override def fetchBy(userId: String): Option[User] = {
+    val query = """select * from Users where user_id = ?"""
+    val mapping: ResultSet => User = row =>
+      User(
+        id = row.getString("id"),
+        name = row.getString("name")
+      )
+    val conn = pool.getConnection()
+    try {
+      val stmt = conn.prepareStatement(query)
+      stmt.setString(1, userId)
+      val resultSet = stmt.executeQuery(query)
+      val userOpt: Option[User] = Iterator.continually(resultSet).takeWhile(_.next()).map(mapping).toList.headOption
+      userOpt
+    } catch {
+      case e: SQLException => {
+        e.printStackTrace()
+        None
+      }
+    } finally {
+      conn.close()
+    }
   }
 
 }

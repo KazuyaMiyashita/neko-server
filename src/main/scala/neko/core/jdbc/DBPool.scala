@@ -1,4 +1,4 @@
-package neko.jdbc
+package neko.core.jdbc
 
 import java.sql.Connection
 

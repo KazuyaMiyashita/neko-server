@@ -4,7 +4,7 @@ import neko.core.server._
 import neko.core.http._
 import neko.chat.controller.UserController
 import java.time.Clock
-import neko.jdbc.DBPool
+import neko.core.jdbc.DBPool
 import java.sql.Connection
 import neko.chat.repository.UserRepository
 import neko.chat.repository.UserRepositoryImpl
