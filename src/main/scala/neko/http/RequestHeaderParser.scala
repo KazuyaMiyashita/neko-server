@@ -1,4 +1,4 @@
-package neko.server
+package neko.http
 
 object RequestHeaderParser {
 

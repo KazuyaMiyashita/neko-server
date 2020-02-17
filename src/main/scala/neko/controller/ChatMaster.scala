@@ -1,17 +1,17 @@
-package neko.controller
+// package neko.controller
 
-import scala.collection.mutable
+// import scala.collection.mutable
 
-case class ChatMaster(
-    room: String,
-    name: String,
-    hash: String,
-    message: String,
-    timestamp: Long
-)
+// case class ChatMaster(
+//     room: String,
+//     name: String,
+//     hash: String,
+//     message: String,
+//     timestamp: Long
+// )
 
-object ChatMaster {
+// object ChatMaster {
 
-  val table: mutable.ArrayBuffer[ChatMaster] = mutable.ArrayBuffer.empty
+//   val table: mutable.ArrayBuffer[ChatMaster] = mutable.ArrayBuffer.empty
 
-}
+// }

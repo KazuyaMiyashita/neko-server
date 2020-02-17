@@ -1,4 +1,4 @@
-package neko.server
+package neko.http
 
 case class Response private (
     status: Status,

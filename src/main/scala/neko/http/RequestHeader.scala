@@ -1,4 +1,4 @@
-package neko.server
+package neko.http
 
 case class RequestHeader(
     method: Method,
