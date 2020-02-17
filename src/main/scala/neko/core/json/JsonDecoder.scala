@@ -1,4 +1,4 @@
-package neko.json
+package neko.core.json
 
 trait JsonDecoder[T] {
   def decode(js: JsValue): Option[T]

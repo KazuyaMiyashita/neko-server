@@ -1,4 +1,4 @@
-package neko.json
+package neko.core.json
 
 trait JsValue {
   def apply(key: String): JsValue

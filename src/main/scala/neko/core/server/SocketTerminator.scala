@@ -1,4 +1,4 @@
-package neko.server
+package neko.core.server
 
 import java.net.Socket
 

@@ -1,4 +1,4 @@
-package neko.json
+package neko.core.json
 
 trait JsonEncoder[T] {
   def encode(value: T): JsValue

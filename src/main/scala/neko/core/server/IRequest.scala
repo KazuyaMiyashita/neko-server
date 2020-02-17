@@ -1,4 +1,4 @@
-package neko.server
+package neko.core.server
 
 import java.io.InputStream
 import java.io.OutputStream

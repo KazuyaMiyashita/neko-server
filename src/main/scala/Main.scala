@@ -1,6 +1,5 @@
-import neko.server._
-
-import neko.http._
+import neko.core.server._
+import neko.core.http._
 
 object Main extends App {
 

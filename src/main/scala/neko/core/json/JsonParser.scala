@@ -1,4 +1,4 @@
-package neko.json
+package neko.core.json
 
 import scala.util.parsing.combinator._
 

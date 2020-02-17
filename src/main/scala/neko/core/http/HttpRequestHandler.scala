@@ -1,6 +1,6 @@
-package neko.http
+package neko.core.http
 
-import neko.server.{IRequest, IRequestHandler}
+import neko.core.server.{IRequest, IRequestHandler}
 import scala.io.BufferedSource
 import java.io.{BufferedWriter, OutputStreamWriter}
 

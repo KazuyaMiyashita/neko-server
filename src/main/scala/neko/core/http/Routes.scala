@@ -1,4 +1,4 @@
-package neko.http
+package neko.core.http
 
 import scala.util.matching.Regex
 
