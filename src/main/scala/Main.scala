@@ -14,7 +14,7 @@ object Main extends App {
     // OPTIONS -> ".*".r        -> neko.controller.HandlePreflight.apply
   )
 
-  val requestHandler: ISocketRequestHandler = new HttpRequestHandler(routes)
+  val requestHandler: IRequestHandler = new HttpRequestHandler(routes)
 
   val serverSocketHandler = new ServerSocketHandler(
     requestHandler
@@ -24,7 +24,7 @@ object Main extends App {
 
   println("press enter to terminate")
   io.StdIn.readLine()
-  println("closing..")
-  serverSocketHandler.close()
+  println("closing...")
+  serverSocketHandler.terminate()
 
 }

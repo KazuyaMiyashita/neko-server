@@ -1,12 +1,12 @@
 package neko.http
 
-import neko.server.{ISocketRequest, ISocketRequestHandler}
+import neko.server.{IRequest, IRequestHandler}
 import scala.io.BufferedSource
 import java.io.{BufferedWriter, OutputStreamWriter}
 
-class HttpRequestHandler(routes: Routes) extends ISocketRequestHandler {
+class HttpRequestHandler(routes: Routes) extends IRequestHandler {
 
-  override def handle(req: ISocketRequest): Unit = {
+  override def handle(req: IRequest): Unit = {
     val in    = new BufferedSource(req.in)
     val lines = in.getLines.takeWhile(_.nonEmpty).toList
     println("**request**")
