@@ -21,8 +21,14 @@ class UserRepositoryImplSpec extends FlatSpec with Matchers {
   }
 
   "UserRepositoryImplSpec" should "fetchByできる" in {
+    val name = "Alice"
+    val io = for {
+      u1   <- userRepository._insert(name)
+      user <- userRepository._fetchBy(u1.id)
+    } yield user
+    val user = io.runRollback(conn())
 
-    1 shouldEqual 1
+    user.map(_.map(_.name)) shouldEqual Right(Some("Alice"))
   }
 
 }

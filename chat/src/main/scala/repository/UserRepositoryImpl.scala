@@ -32,7 +32,7 @@ class UserRepositoryImpl(pool: DBPool, clock: Clock) extends UserRepository {
   }
 
   private[repository] def _fetchBy(userId: String): ConnectionIO[Option[User]] = ConnectionIO { conn =>
-    val query = """select * from Users where user_id = ?"""
+    val query = """select * from Users where id = ?"""
     val mapping: ResultSet => User = row =>
       User(
         id = row.getString("id"),
