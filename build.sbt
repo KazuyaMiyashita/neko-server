@@ -24,6 +24,7 @@ lazy val chat = (project in file("chat"))
     name := "neko-server-chat",
     commonSettings,
     libraryDependencies += scalaTest % Test,
+    libraryDependencies += mysql,
   )
   .dependsOn(root)
 

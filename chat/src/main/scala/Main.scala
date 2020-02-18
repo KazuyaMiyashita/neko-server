@@ -19,8 +19,8 @@ object Main extends App {
   val userController                 = new UserController(userRepository)
 
   val routes = Routes(
-    GET  -> "/"     -> (_ => Response(OK, "Hello My Server!")),
-    POST -> "/echo" -> (req => Response(OK, req.body)),
+    GET  -> "/"      -> (_ => Response(OK, "Hello My Server!")),
+    POST -> "/echo"  -> (req => Response(OK, req.body)),
     POST -> "/users" -> userController.create
   )
 

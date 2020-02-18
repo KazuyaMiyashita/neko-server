@@ -1,51 +1,51 @@
 package neko.core.jdbc
 
-import java.sql.Connection
+import java.sql.{Connection, SQLException}
 
-trait ConnectionIO[T] {
-  self =>
+case class ConnectionIO[T](run: Connection => T) {
+  def map[U](f: T => U): ConnectionIO[U]                   = ConnectionIO(run andThen f)
+  def flatMap[U](f: T => ConnectionIO[U]): ConnectionIO[U] = ConnectionIO(c => f(run(c)).run(c))
 
-  final def map[U](f: T => U): ConnectionIO[U] = new ConnectionIO[U] {
-    override protected val execute: Connection => U = {
-      self.execute.andThen(f)
+  def runTx(conn: Connection): Either[Throwable, T] = {
+    conn.setAutoCommit(false)
+    try {
+      val res = run(conn)
+      conn.commit()
+      Right(res)
+    } catch {
+      case e: SQLException => {
+        conn.rollback()
+        Left(e)
+      }
+    } finally {
+      conn.close()
     }
   }
-  final def flatMap[U](f: T => ConnectionIO[U]): ConnectionIO[U] = new ConnectionIO[U] {
-    override protected val execute: Connection => U = {
-      // self.execute.andThen(f)
-      ???
+
+  def runReadOnly(conn: Connection): Either[Throwable, T] = {
+    conn.setReadOnly(true)
+    try {
+      Right(run(conn))
+    } catch {
+      case e: SQLException => {
+        Left(e)
+      }
+    } finally {
+      conn.close()
     }
   }
-  protected val execute: Connection => T
 
-  final def run(pool: DBPool): T = {
-    val conn = pool.getConnection()
-    execute(conn)
+  def runRollback(conn: Connection): Either[Throwable, T] = {
+    conn.setAutoCommit(false)
+    try {
+      Right(run(conn))
+    } catch {
+      case e: SQLException => {
+        Left(e)
+      }
+    } finally {
+      conn.rollback()
+      conn.close()
+    }
   }
-
-}
-
-object ConnectionIO {
-
-  def apply[T](f: Connection => T): ConnectionIO[T] = new ConnectionIO[T] {
-    override val execute: Connection => T = f
-  }
-
-  def run[T](io: ConnectionIO[T])(pool: DBPool): T = {
-    val conn = pool.getConnection()
-    io.execute(conn)
-  }
-
-}
-
-object sandbox {
-
-  val pool: DBPool = ???
-  val io: ConnectionIO[Int] = for {
-    n1 <- ConnectionIO { _ => 42 }
-    n2 <- ConnectionIO { _ => 42 }
-  } yield n1 + n2
-  val result: Int = io.run(pool)
-
-
 }
