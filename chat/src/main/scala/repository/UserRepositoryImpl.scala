@@ -18,12 +18,12 @@ class UserRepositoryImpl(pool: DBPool, clock: Clock) extends UserRepository {
   private[repository] def _insert(name: String): ConnectionIO[User] = ConnectionIO { conn =>
     val id = UUID.randomUUID().toString
     val query =
-      """insert into Users(`id`, `name`, `created_at`) values (?, ?, ?)"""
+      """insert into Users(id, name, created_at) values (?, ?, ?);"""
     val stmt = conn.prepareStatement(query)
     stmt.setString(1, id)
     stmt.setString(2, name)
     stmt.setTimestamp(3, Timestamp.from(clock.instant()))
-    stmt.executeQuery(query)
+    stmt.executeUpdate()
     User(id, name)
   }
 

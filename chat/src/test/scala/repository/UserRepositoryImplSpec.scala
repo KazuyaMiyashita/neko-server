@@ -15,7 +15,9 @@ class UserRepositoryImplSpec extends FlatSpec with Matchers {
     val name                          = "Alice"
     val user: Either[Throwable, User] = userRepository._insert(name).runRollback(conn())
 
-    1 shouldEqual 1
+    println(user)
+
+    user.isRight shouldEqual true
   }
 
   "UserRepositoryImplSpec" should "fetchByできる" in {

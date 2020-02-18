@@ -5,7 +5,7 @@ import neko.core.http._
 import neko.chat.controller.UserController
 import java.time.Clock
 import neko.core.jdbc.DBPool
-import java.sql.Connection
+import java.sql.{DriverManager, Connection}
 import neko.chat.repository.UserRepository
 import neko.chat.repository.UserRepositoryImpl
 
@@ -13,7 +13,14 @@ object Main extends App {
 
   val clock = Clock.systemUTC()
   val pool: DBPool = new DBPool {
-    override def getConnection(): Connection = ???
+    Class.forName("com.mysql.cj.jdbc.Driver")
+    override def getConnection(): Connection = {
+      DriverManager.getConnection(
+        "jdbc:mysql://localhost:13306/db",
+        "root",
+        ""
+      )
+    }
   }
   val userRepository: UserRepository = new UserRepositoryImpl(pool, clock)
   val userController                 = new UserController(userRepository)

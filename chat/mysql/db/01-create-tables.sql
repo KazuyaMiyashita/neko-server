@@ -24,8 +24,8 @@ create table Messages(
   `message` varchar (1024) not null,
   `created_at` datetime not null,
   primary key(`id`),
-  foreign key(`room_id`) references rooms(`id`),
-  foreign key(`user_id`) references users(`id`),
+  foreign key(`room_id`) references Rooms(`id`),
+  foreign key(`user_id`) references Users(`id`),
   index idx_create_at(`created_at`)
 );
 
