@@ -1,11 +1,13 @@
 package neko.chat.controller
 
 import neko.core.http.{Request, Response}
-import neko.core.http.{OK, BAD_REQUEST, INTERNAL_SERVER_ERROR}
+import neko.core.http.{OK, BAD_REQUEST, NOT_FOUND, INTERNAL_SERVER_ERROR}
 import neko.core.json.Json
 
 import neko.chat.repository.UserRepository
 import neko.chat.entity.User
+import neko.core.json.{JsonDecoder, JsonEncoder}
+import neko.core.json.JsValue
 
 class UserController(
     userRepository: UserRepository
@@ -14,18 +16,35 @@ class UserController(
   import UserController._
 
   def create(request: Request): Response = {
-
     val result = for {
-      form <- UserCreateRequest.parse(request.body).toRight(Response(BAD_REQUEST))
-      user <- userRepository.insert(form.name).left.map { e =>
+      name <- Json
+        .parse(request.body)
+        .flatMap(nameDecoder.decode)
+        .toRight(Response(BAD_REQUEST))
+      user <- userRepository.insert(name).left.map { e =>
         println(e)
         Response(INTERNAL_SERVER_ERROR)
       }
     } yield {
-      val res = UserCreateResponse.fromUser(user)
-      Response(OK, res.toJsonString).withContentType("application/json")
+      val jsonString = Json.format(userEncoder.encode(user))
+      Response(OK, jsonString).withContentType("application/json")
     }
+    result.merge
+  }
 
+  def get(request: Request): Response = {
+    println(request.header.getQueries)
+    val result = for {
+      id <- request.header.getQueries
+        .get("id")
+        .toRight(Response(BAD_REQUEST))
+      user <- userRepository
+        .fetchBy(id)
+        .toRight(Response(NOT_FOUND))
+    } yield {
+      val jsonString = Json.format(userEncoder.encode(user))
+      Response(OK, jsonString).withContentType("application/json")
+    }
     result.merge
   }
 
@@ -33,31 +52,17 @@ class UserController(
 
 object UserController {
 
-  case class UserCreateRequest(name: String)
-  object UserCreateRequest {
-    def parse(body: String): Option[UserCreateRequest] = {
-      Json
-        .parse(body)
-        .flatMap(json => (json \ "name").as[String])
-        .map(name => UserCreateRequest(name))
+  val nameDecoder: JsonDecoder[String] = new JsonDecoder[String] {
+    override def decode(js: JsValue): Option[String] = {
+      (js \ "name").as[String]
     }
   }
 
-  case class UserCreateResponse(
-      id: String,
-      name: String
-  ) {
-    def toJsonString: String = {
-      val json = Json.obj(
-        "id"   -> Json.str(id),
-        "name" -> Json.str(name)
-      )
-      Json.format(json)
-    }
-  }
-  object UserCreateResponse {
-    def fromUser(user: User): UserCreateResponse =
-      UserCreateResponse(user.id, user.name)
+  val userEncoder: JsonEncoder[User] = new JsonEncoder[User] {
+    override def encode(value: User): JsValue = Json.obj(
+      "id"   -> Json.str(value.id),
+      "name" -> Json.str(value.name)
+    )
   }
 
 }
