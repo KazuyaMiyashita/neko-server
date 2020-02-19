@@ -12,7 +12,7 @@ create table Users(
 
 create table Rooms(
   `id` varchar(36) not null,
-  `name` varchar (255) not null,
+  `name` varchar (255) not null unique,
   `created_at` datetime not null,
   primary key(`id`)
 );

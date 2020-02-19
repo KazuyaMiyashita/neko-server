@@ -1,26 +1,24 @@
 package neko.chat.repository
 
 import org.scalatest._
-import java.sql.{DriverManager, Connection}
-import neko.core.jdbc.DBPool
+
 import java.time.Clock
 import neko.chat.entity.User
+import neko.chat.repository.share.TestDBPool
 
 class UserRepositoryImplSpec extends FlatSpec with Matchers {
 
   val userRepository: UserRepositoryImpl = new UserRepositoryImpl(TestDBPool, Clock.systemUTC())
   def conn()                             = TestDBPool.getConnection()
 
-  "UserRepositoryImplSpec" should "insertできる" in {
+  "UserRepositoryImpl" should "insertできる" in {
     val name                          = "Alice"
     val user: Either[Throwable, User] = userRepository._insert(name).runRollback(conn())
-
-    println(user)
 
     user.isRight shouldEqual true
   }
 
-  "UserRepositoryImplSpec" should "fetchByできる" in {
+  "UserRepositoryImpl" should "fetchByできる" in {
     val name = "Alice"
     val io = for {
       u1   <- userRepository._insert(name)
@@ -29,20 +27,6 @@ class UserRepositoryImplSpec extends FlatSpec with Matchers {
     val user = io.runRollback(conn())
 
     user.map(_.map(_.name)) shouldEqual Right(Some("Alice"))
-  }
-
-}
-
-object TestDBPool extends DBPool {
-
-  Class.forName("com.mysql.cj.jdbc.Driver")
-
-  override def getConnection(): Connection = {
-    DriverManager.getConnection(
-      "jdbc:mysql://localhost:13306/db",
-      "root",
-      ""
-    )
   }
 
 }

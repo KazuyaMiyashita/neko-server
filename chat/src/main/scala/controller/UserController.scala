@@ -22,7 +22,6 @@ class UserController(
         .flatMap(nameDecoder.decode)
         .toRight(Response(BAD_REQUEST))
       user <- userRepository.insert(name).left.map { e =>
-        println(e)
         Response(INTERNAL_SERVER_ERROR)
       }
     } yield {
