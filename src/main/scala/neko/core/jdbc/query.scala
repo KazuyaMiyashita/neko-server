@@ -9,4 +9,9 @@ object query {
     Option.when(resultSet.next())(mapping(resultSet))
   }
 
+  def list[T](ps: PreparedStatement, mapping: ResultSet => T)(conn: Connection): List[T] = {
+    val resultSet: ResultSet = ps.executeQuery()
+    Iterator.continually(resultSet).takeWhile(_.next()).map(mapping).toList
+  }
+
 }
