@@ -2,31 +2,35 @@ package neko.chat.repository
 
 import org.scalatest._
 
-import java.time.Clock
+import java.util.UUID
+import java.time.Instant
+
 import neko.chat.entity.User
 import neko.chat.repository.share.TestDBPool
 
 class UserRepositoryImplSpec extends FlatSpec with Matchers {
 
-  val userRepository: UserRepositoryImpl = new UserRepositoryImpl(TestDBPool, Clock.systemUTC())
+  val userRepository: UserRepositoryImpl = new UserRepositoryImpl
   def conn()                             = TestDBPool.getConnection()
 
   "UserRepositoryImpl" should "insertできる" in {
-    val name                          = "Alice"
-    val user: Either[Throwable, User] = userRepository._insert(name).runRollback(conn())
+    val user = User(UUID.randomUUID(), "Alice", Instant.parse("2020-01-01T10:00:00.000Z"))
 
-    user.isRight shouldEqual true
+    val result: Either[Throwable, Unit] = userRepository.create(user).runRollback(conn())
+
+    result.isRight shouldEqual true
   }
 
   "UserRepositoryImpl" should "fetchByできる" in {
-    val name = "Alice"
-    val io = for {
-      u1   <- userRepository._insert(name)
-      user <- userRepository._fetchBy(u1.id)
-    } yield user
-    val user = io.runRollback(conn())
+    val user = User(UUID.randomUUID(), "Alice", Instant.parse("2020-01-01T10:00:00.000Z"))
 
-    user.map(_.map(_.name)) shouldEqual Right(Some("Alice"))
+    val io = for {
+      _    <- userRepository.create(user)
+      user <- userRepository.fetchBy(user.id)
+    } yield user
+    val result = io.runRollback(conn())
+
+    result shouldEqual Right(Some(user))
   }
 
 }

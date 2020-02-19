@@ -1,11 +1,13 @@
 package neko.chat.repository
 
+import neko.core.jdbc.ConnectionIO
 import neko.chat.entity.User
+import java.util.UUID
 
 trait UserRepository {
 
-  def insert(name: String): Either[Throwable, User]
+  def create(user: User): ConnectionIO[Unit]
 
-  def fetchBy(userId: String): Option[User]
+  def fetchBy(userId: UUID): ConnectionIO[Option[User]]
 
 }

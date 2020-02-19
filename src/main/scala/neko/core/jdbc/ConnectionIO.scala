@@ -1,6 +1,6 @@
 package neko.core.jdbc
 
-import java.sql.{Connection, SQLException}
+import java.sql.Connection
 
 case class ConnectionIO[T](run: Connection => T) {
   def map[U](f: T => U): ConnectionIO[U]                   = ConnectionIO(run andThen f)
@@ -13,7 +13,7 @@ case class ConnectionIO[T](run: Connection => T) {
       conn.commit()
       Right(res)
     } catch {
-      case e: SQLException => {
+      case e: Throwable => {
         conn.rollback()
         Left(e)
       }
@@ -27,7 +27,7 @@ case class ConnectionIO[T](run: Connection => T) {
     try {
       Right(run(conn))
     } catch {
-      case e: SQLException => {
+      case e: Throwable => {
         Left(e)
       }
     } finally {
@@ -40,7 +40,7 @@ case class ConnectionIO[T](run: Connection => T) {
     try {
       Right(run(conn))
     } catch {
-      case e: SQLException => {
+      case e: Throwable => {
         Left(e)
       }
     } finally {

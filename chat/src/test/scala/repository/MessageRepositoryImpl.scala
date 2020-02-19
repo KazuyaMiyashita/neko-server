@@ -2,7 +2,8 @@ package neko.chat.repository
 
 import org.scalatest._
 
-import java.time.Clock
+import java.util.UUID
+import java.time.Instant
 
 import neko.core.jdbc.ConnectionIO
 import neko.chat.repository.share.TestDBPool
@@ -10,45 +11,45 @@ import neko.chat.entity.{User, Room, Message}
 
 class MessageRepositoryImplSpec extends FlatSpec with Matchers {
 
-  val userRepository: UserRepositoryImpl       = new UserRepositoryImpl(TestDBPool, Clock.systemUTC())
-  val roomRepository: RoomRepositoryImpl       = new RoomRepositoryImpl(TestDBPool, Clock.systemUTC())
-  val messageRepository: MessageRepositoryImpl = new MessageRepositoryImpl(TestDBPool, Clock.systemUTC())
+  val userRepository: UserRepositoryImpl       = new UserRepositoryImpl
+  val roomRepository: RoomRepositoryImpl       = new RoomRepositoryImpl
+  val messageRepository: MessageRepositoryImpl = new MessageRepositoryImpl
 
   def conn() = TestDBPool.getConnection()
 
-  private def genDataIO: ConnectionIO[(User, Room, List[Message])] =
-    for {
-      user <- userRepository._insert("Alice")
-      room <- roomRepository._create("room01")
-      mes1 <- messageRepository._post(room.id, user.id, "最初のメッセージ")
-      mes2 <- messageRepository._post(room.id, user.id, "次のメッセージ")
-      mes3 <- messageRepository._post(room.id, user.id, "みっつめのメッセージ")
-    } yield (user, room, List(mes1, mes2, mes3))
+  object dummy {
+    val user = User(UUID.randomUUID(), "Alice", Instant.parse("2020-01-01T10:00:00.000Z"))
+    val room = Room(UUID.randomUUID(), "room01", Instant.parse("2020-01-01T10:00:00.000Z"))
+    val messages: List[Message] = List(
+      Message(UUID.randomUUID(), room.id, user.id, "最初のメッセージ", Instant.parse("2020-01-01T10:00:00.001Z")),
+      Message(UUID.randomUUID(), room.id, user.id, "次のメッセージ", Instant.parse("2020-01-01T10:00:00.002Z")),
+      Message(UUID.randomUUID(), room.id, user.id, "みっつめのメッセージ", Instant.parse("2020-01-01T10:00:00.003Z"))
+    )
+
+    def genDataIO: ConnectionIO[Unit] =
+      for {
+        _ <- userRepository.create(user)
+        _ <- roomRepository.create(room)
+        _ <- messageRepository.post(messages(0))
+        _ <- messageRepository.post(messages(1))
+        _ <- messageRepository.post(messages(2))
+      } yield ()
+  }
 
   "MessageRepositoryImpl" should "postできる" in {
-    val result: Either[Throwable, (User, Room, List[Message])] = genDataIO.runRollback(conn())
+    val result: Either[Throwable, Unit] = dummy.genDataIO.runRollback(conn())
     result.isRight shouldEqual true
   }
 
   "MessageRepositoryImpl" should "fetchAllByRoomIdで投稿時間の降順で全件手に入る" in {
     val io = for {
-      data <- genDataIO
-      (user, room, List(mes1, mes2, mes3)) = data
-      messages <- messageRepository._fetchAllByRoomId(room.id)
+      _        <- dummy.genDataIO
+      messages <- messageRepository.fetchAllByRoomId(dummy.room.id)
     } yield messages
 
-    val messages: Either[Throwable, List[Message]] = io.runRollback(conn())
-    messages.foreach { mess =>
-      mess.foreach(println)
-    }
+    val result: Either[Throwable, List[Message]] = io.runRollback(conn())
 
-    messages.map(_.map(_.message)) shouldEqual Right(
-      List(
-        "みっつめのメッセージ",
-        "次のメッセージ",
-        "最初のメッセージ"
-      )
-    )
+    result shouldEqual Right(dummy.messages.reverse)
   }
 
 }

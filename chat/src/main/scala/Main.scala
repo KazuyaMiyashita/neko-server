@@ -12,7 +12,7 @@ import neko.chat.repository.UserRepositoryImpl
 object Main extends App {
 
   val clock = Clock.systemUTC()
-  val pool: DBPool = new DBPool {
+  val dbPool: DBPool = new DBPool {
     Class.forName("com.mysql.cj.jdbc.Driver")
     override def getConnection(): Connection = {
       DriverManager.getConnection(
@@ -22,8 +22,12 @@ object Main extends App {
       )
     }
   }
-  val userRepository: UserRepository = new UserRepositoryImpl(pool, clock)
-  val userController                 = new UserController(userRepository)
+  val userRepository: UserRepository = new UserRepositoryImpl
+  val userController = new UserController(
+    userRepository,
+    dbPool,
+    clock
+  )
 
   val routes = Routes(
     GET  -> "/"          -> (_ => Response(OK, "Hello My Server!")),

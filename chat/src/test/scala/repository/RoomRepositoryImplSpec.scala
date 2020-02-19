@@ -1,42 +1,48 @@
 package neko.chat.repository
 
 import org.scalatest._
-import java.time.Clock
+
+import java.util.UUID
+import java.time.Instant
+
 import neko.chat.entity.Room
 import neko.chat.repository.share.TestDBPool
 
 class RoomRepositoryImplSpec extends FlatSpec with Matchers {
 
-  val roomRepository: RoomRepositoryImpl = new RoomRepositoryImpl(TestDBPool, Clock.systemUTC())
+  val roomRepository: RoomRepositoryImpl = new RoomRepositoryImpl
   def conn()                             = TestDBPool.getConnection()
 
   "RoomRepositoryImpl" should "createできる" in {
-    val name                          = "room1"
-    val room: Either[Throwable, Room] = roomRepository._create(name).runRollback(conn())
+    val room = Room(UUID.randomUUID(), "room01", Instant.parse("2020-01-01T10:00:00.000Z"))
 
-    room.isRight shouldEqual true
+    val result: Either[Throwable, Unit] = roomRepository.create(room).runRollback(conn())
+
+    result.isRight shouldEqual true
   }
 
   "RoomRepositoryImpl" should "fetchByNameできる" in {
-    val name = "room1"
-    val io = for {
-      r1   <- roomRepository._create(name)
-      room <- roomRepository._fetchByName(r1.name)
-    } yield room
-    val room = io.runRollback(conn())
+    val room = Room(UUID.randomUUID(), "room01", Instant.parse("2020-01-01T10:00:00.000Z"))
 
-    room.map(_.map(_.name)) shouldEqual Right(Some("room1"))
+    val io = for {
+      _    <- roomRepository.create(room)
+      room <- roomRepository.fetchByName(room.name)
+    } yield room
+    val result = io.runRollback(conn())
+
+    result shouldEqual Right(Some(room))
   }
 
   "RoomRepositoryImpl" should "fetchByIdできる" in {
-    val name = "room1"
-    val io = for {
-      r1   <- roomRepository._create(name)
-      room <- roomRepository._fetchById(r1.id)
-    } yield room
-    val room = io.runRollback(conn())
+    val room = Room(UUID.randomUUID(), "room01", Instant.parse("2020-01-01T10:00:00.000Z"))
 
-    room.map(_.map(_.name)) shouldEqual Right(Some("room1"))
+    val io = for {
+      _    <- roomRepository.create(room)
+      room <- roomRepository.fetchById(room.id)
+    } yield room
+    val result = io.runRollback(conn())
+
+    result shouldEqual Right(Some(room))
   }
 
 }

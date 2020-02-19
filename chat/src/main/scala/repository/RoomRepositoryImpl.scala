@@ -1,62 +1,51 @@
 package neko.chat.repository
 
-import java.time.Clock
 import java.util.UUID
 import java.sql.Timestamp
 
-import neko.core.jdbc.{DBPool, ConnectionIO}
+import neko.core.jdbc.ConnectionIO
 import neko.core.jdbc.query._
 import neko.chat.entity.Room
 import java.sql.ResultSet
 
-class RoomRepositoryImpl(pool: DBPool, clock: Clock) extends RoomRepository {
+class RoomRepositoryImpl extends RoomRepository {
 
-  override def create(name: String): Either[Throwable, Room] = {
-    _create(name).runTx(pool.getConnection())
-  }
+  import RoomRepositoryImpl._
 
-  override def fetchById(id: String): Option[Room] = {
-    _fetchById(id).runTx(pool.getConnection()).toOption.flatten
-  }
-
-  override def fetchByName(name: String): Option[Room] = {
-    _fetchByName(name).runTx(pool.getConnection()).toOption.flatten
-  }
-
-  def _create(name: String): ConnectionIO[Room] = ConnectionIO { conn =>
-    val id = UUID.randomUUID().toString
+  override def create(room: Room): ConnectionIO[Unit] = ConnectionIO { conn =>
     val query =
       """insert into Rooms(id, name, created_at) values (?, ?, ?);"""
-    val stmt = conn.prepareStatement(query)
-    stmt.setString(1, id)
-    stmt.setString(2, name)
-    stmt.setTimestamp(3, Timestamp.from(clock.instant()))
-    stmt.executeUpdate()
-    Room(id, name)
+    val pstmt = conn.prepareStatement(query)
+    pstmt.setString(1, room.id.toString)
+    pstmt.setString(2, room.name.toString)
+    pstmt.setTimestamp(3, Timestamp.from(room.createdAt))
+    pstmt.executeUpdate()
+    ()
   }
 
-  def _fetchById(id: String): ConnectionIO[Option[Room]] = ConnectionIO { conn =>
-    val query = """select * from Rooms where id = ?"""
-    val mapping: ResultSet => Room = row =>
-      Room(
-        id = row.getString("id"),
-        name = row.getString("name")
-      )
-    val stmt = conn.prepareStatement(query)
-    stmt.setString(1, id)
-    select(stmt, mapping)(conn)
+  override def fetchById(id: UUID): ConnectionIO[Option[Room]] = ConnectionIO { conn =>
+    val query = """select * from Rooms where id = ?;"""
+    val pstmt = conn.prepareStatement(query)
+    pstmt.setString(1, id.toString)
+    select(pstmt, toRoomEntity)(conn)
   }
 
-  def _fetchByName(name: String): ConnectionIO[Option[Room]] = ConnectionIO { conn =>
-    val query = """select * from Rooms where name = ?"""
-    val mapping: ResultSet => Room = row =>
-      Room(
-        id = row.getString("id"),
-        name = row.getString("name")
-      )
-    val stmt = conn.prepareStatement(query)
-    stmt.setString(1, name)
-    select(stmt, mapping)(conn)
+  override def fetchByName(name: String): ConnectionIO[Option[Room]] = ConnectionIO { conn =>
+    val query = """select * from Rooms where name = ?;"""
+    val pstmt = conn.prepareStatement(query)
+    pstmt.setString(1, name)
+    select(pstmt, toRoomEntity)(conn)
   }
+
+}
+
+object RoomRepositoryImpl {
+
+  val toRoomEntity: ResultSet => Room = row =>
+    Room(
+      id = UUID.fromString(row.getString("id")),
+      name = row.getString("name"),
+      createdAt = row.getTimestamp("created_at").toInstant
+    )
 
 }
