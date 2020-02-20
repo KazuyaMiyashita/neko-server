@@ -1,10 +1,10 @@
-package neko.chat.service
+// package neko.chat.service
 
-import java.util.UUID
-import java.time.Clock
-import neko.core.jdbc.ConnectionIO
-import neko.chat.repository.{RoomRepository, UserRepository}
-import neko.chat.entity.{User, Room}
+// import java.util.UUID
+// import java.time.Clock
+// import neko.core.jdbc.ConnectionIO
+// import neko.chat.repository.{RoomRepository, UserRepository}
+// import neko.chat.entity.{User, Room}
 
 // class RoomService(
 //   userRepository: UserRepository,
