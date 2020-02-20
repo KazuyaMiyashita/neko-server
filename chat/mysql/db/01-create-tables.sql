@@ -1,8 +1,3 @@
-drop table if exists users;
-drop table if exists rooms;
-drop table if exists messages;
-drop table if exists room_users;
-
 create table Users(
   `id` varchar(36) not null,
   `name` varchar (255) not null,
@@ -33,4 +28,20 @@ create table Room_Users(
   `room_id` varchar(36) not null,
   `user_id` varchar(36) not null,
   primary key(`room_id`, `user_id`)
-)
+);
+
+create table Auths(
+  `email` varchar(255) not null,
+  `hashed_password` varchar(255) not null,
+  `user_id` varchar(36) not null unique,
+  primary key (`email`),
+  foreign key(`user_id`) references Users(`id`)
+);
+
+create table Tokens(
+  `token` varchar(255) not null,
+  `user_id` varchar(36) not null,
+  `expires_at` datetime(3) not null,
+  primary key (`token`),
+  foreign key(`user_id`) references Users(`id`)
+);
