@@ -64,6 +64,9 @@ object BAD_REQUEST extends Status {
 object NOT_FOUND extends Status {
   override def view = "404 Not Found"
 }
+object CONFLICT extends Status {
+  override def view = "409 Conflict"
+}
 object INTERNAL_SERVER_ERROR extends Status {
   override def view = "500 Internal Server Error"
 }

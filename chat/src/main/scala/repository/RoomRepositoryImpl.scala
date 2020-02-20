@@ -8,6 +8,9 @@ import neko.core.jdbc.query._
 import neko.chat.entity.Room
 import java.sql.ResultSet
 
+import java.sql.SQLIntegrityConstraintViolationException
+import neko.chat.repository.RoomRepository.DuplicateRoomNameException
+
 class RoomRepositoryImpl extends RoomRepository {
 
   import RoomRepositoryImpl._
@@ -19,7 +22,11 @@ class RoomRepositoryImpl extends RoomRepository {
     pstmt.setString(1, room.id.toString)
     pstmt.setString(2, room.name.toString)
     pstmt.setTimestamp(3, Timestamp.from(room.createdAt))
-    pstmt.executeUpdate()
+    try {
+      pstmt.executeUpdate()
+    } catch {
+      case e: SQLIntegrityConstraintViolationException => throw new DuplicateRoomNameException(e)
+    }
     ()
   }
 
