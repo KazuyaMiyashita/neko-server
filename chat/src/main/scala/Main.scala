@@ -2,7 +2,7 @@ package neko.chat
 
 import neko.core.server._
 import neko.core.http._
-import neko.chat.controller.UserController
+import neko.chat.controller.{UserController, AuthController}
 import java.time.Clock
 import neko.core.jdbc.DBPool
 import java.sql.{DriverManager, Connection}
@@ -28,12 +28,18 @@ object Main extends App {
     dbPool,
     clock
   )
+  val authController = new AuthController(
+    ???,
+    dbPool
+  )
 
   val routes = Routes(
-    GET  -> "/"          -> (_ => Response(OK, "Hello My Server!")),
-    POST -> "/echo"      -> (req => Response(OK, req.body)),
-    GET  -> "/users.*".r -> userController.get,
-    POST -> "/users"     -> userController.create
+    GET  -> "/"            -> (_ => Response(OK, "Hello My Server!")),
+    POST -> "/auth/login"  -> authController.login,
+    POST -> "/auth/logout" -> authController.login,
+    POST -> "/echo"        -> (req => Response(OK, req.body)),
+    GET  -> "/users.*".r   -> userController.get,
+    POST -> "/users"       -> userController.create
   )
 
   val requestHandler: IRequestHandler = new HttpRequestHandler(routes)

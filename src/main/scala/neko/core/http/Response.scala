@@ -61,6 +61,9 @@ object OK extends Status {
 object BAD_REQUEST extends Status {
   override def view = "400 Bad Request"
 }
+object UNAUTHORIZED extends Status {
+  override def view = "401 Unauthorized"
+}
 object NOT_FOUND extends Status {
   override def view = "404 Not Found"
 }
