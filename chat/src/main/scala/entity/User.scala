@@ -5,6 +5,6 @@ import java.time.Instant
 
 case class User(
     id: UUID,
-    name: String,
+    screenName: String,
     createdAt: Instant
 )
