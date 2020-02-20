@@ -49,3 +49,11 @@ case class ConnectionIO[T](run: Connection => T) {
     }
   }
 }
+
+object ConnectionIO {
+
+  def sequence[T](actions: Seq[ConnectionIO[T]]): ConnectionIO[Seq[T]] = {
+    ConnectionIO(c => actions.map(_.run(c)))
+  }
+
+}

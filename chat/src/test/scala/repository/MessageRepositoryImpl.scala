@@ -30,9 +30,7 @@ class MessageRepositoryImplSpec extends FlatSpec with Matchers {
       for {
         _ <- userRepository.create(user)
         _ <- roomRepository.create(room)
-        _ <- messageRepository.post(messages(0))
-        _ <- messageRepository.post(messages(1))
-        _ <- messageRepository.post(messages(2))
+        _ <- ConnectionIO.sequence(messages.map(messageRepository.post))
       } yield ()
   }
 
