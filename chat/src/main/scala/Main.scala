@@ -2,12 +2,13 @@ package neko.chat
 
 import neko.core.server._
 import neko.core.http._
-import neko.chat.controller.{UserController, AuthController}
+import neko.chat.controller.{AuthController, UserController, MessageController}
 import java.time.Clock
 import neko.core.jdbc.DBPool
 import java.sql.{DriverManager, Connection}
 import neko.chat.repository.UserRepository
 import neko.chat.repository.UserRepositoryImpl
+import neko.chat.repository.{MessageRepository, MessageRepositoryImpl}
 
 object Main extends App {
 
@@ -31,6 +32,13 @@ object Main extends App {
   val authController = new AuthController(
     ???,
     dbPool
+  )
+  val messageRepository: MessageRepository = new MessageRepositoryImpl
+  val messageController = new MessageController(
+    messageRepository,
+    ???,
+    dbPool,
+    clock
   )
 
   val routes = Routes(

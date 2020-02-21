@@ -4,7 +4,7 @@ import java.util.UUID
 import java.time.Clock
 
 import neko.core.http.{Request, Response}
-import neko.core.http.{OK, BAD_REQUEST, NOT_FOUND, INTERNAL_SERVER_ERROR}
+import neko.core.http.{OK, BAD_REQUEST, INTERNAL_SERVER_ERROR}
 import neko.core.json.Json
 import neko.core.jdbc.DBPool
 
@@ -51,7 +51,7 @@ object UserController {
 
   val userEncoder: JsonEncoder[User] = new JsonEncoder[User] {
     override def encode(user: User): JsValue = Json.obj(
-      "id"   -> Json.str(user.id.toString),
+      "id"          -> Json.str(user.id.toString),
       "screen_name" -> Json.str(user.screenName)
     )
   }

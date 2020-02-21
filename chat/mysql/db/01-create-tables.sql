@@ -1,6 +1,6 @@
 create table users(
   `id` varchar(36) not null,
-  `name` varchar (255) not null,
+  `screen_name` varchar (255) not null,
   `created_at` datetime(3) not null,
   primary key(`id`)
 );
