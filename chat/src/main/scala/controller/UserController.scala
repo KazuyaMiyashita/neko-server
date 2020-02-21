@@ -4,7 +4,7 @@ import java.util.UUID
 import java.time.Clock
 
 import neko.core.http.{Request, Response}
-import neko.core.http.{OK, BAD_REQUEST, NOT_FOUND, INTERNAL_SERVER_ERROR}
+import neko.core.http.{OK, BAD_REQUEST, INTERNAL_SERVER_ERROR}
 import neko.core.json.Json
 import neko.core.jdbc.DBPool
 
@@ -39,28 +39,6 @@ class UserController(
     result.merge
   }
 
-  def get(request: Request): Response = {
-    println(request.header.getQueries)
-    val result: Either[Response, Response] = for {
-      id <- request.header.getQueries
-        .get("id")
-        .map(UUID.fromString)
-        .toRight(Response(BAD_REQUEST))
-      user <- userRepository
-        .fetchBy(id)
-        .runReadOnly(dbPool.getConnection())
-        .left
-        .map { _ =>
-          Response(INTERNAL_SERVER_ERROR)
-        }
-        .flatMap(_.toRight(Response(NOT_FOUND)))
-    } yield {
-      val jsonString = Json.format(userEncoder.encode(user))
-      Response(OK, jsonString).withContentType("application/json")
-    }
-    result.merge
-  }
-
 }
 
 object UserController {
@@ -72,9 +50,9 @@ object UserController {
   }
 
   val userEncoder: JsonEncoder[User] = new JsonEncoder[User] {
-    override def encode(value: User): JsValue = Json.obj(
-      "id"   -> Json.str(value.id.toString),
-      "name" -> Json.str(value.name)
+    override def encode(user: User): JsValue = Json.obj(
+      "id"          -> Json.str(user.id.toString),
+      "screen_name" -> Json.str(user.screenName)
     )
   }
 

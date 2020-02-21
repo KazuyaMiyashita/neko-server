@@ -18,6 +18,8 @@ class UserRepositoryImplSpec extends FlatSpec with Matchers {
 
     val result: Either[Throwable, Unit] = userRepository.create(user).runRollback(conn())
 
+    result.swap.foreach(println) // 落ちた時に
+
     result.isRight shouldEqual true
   }
 
@@ -29,6 +31,8 @@ class UserRepositoryImplSpec extends FlatSpec with Matchers {
       user <- userRepository.fetchBy(user.id)
     } yield user
     val result = io.runRollback(conn())
+
+    result.swap.foreach(println) // 落ちた時に
 
     result shouldEqual Right(Some(user))
   }

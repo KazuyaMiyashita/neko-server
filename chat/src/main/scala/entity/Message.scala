@@ -5,8 +5,7 @@ import java.time.Instant
 
 case class Message(
     id: UUID,
-    roomId: UUID,
     userId: UUID,
-    message: String,
+    body: String,
     createdAt: Instant
 )
