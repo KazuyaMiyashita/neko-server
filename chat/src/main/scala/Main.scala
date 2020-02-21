@@ -2,13 +2,14 @@ package neko.chat
 
 import neko.core.server._
 import neko.core.http._
-import neko.chat.controller.{AuthController, UserController, MessageController}
 import java.time.Clock
 import neko.core.jdbc.DBPool
 import java.sql.{DriverManager, Connection}
-import neko.chat.repository.UserRepository
-import neko.chat.repository.UserRepositoryImpl
+import neko.chat.repository.{AuthRepository, AuthRepositoryImpl}
+import neko.chat.repository.{UserRepository, UserRepositoryImpl}
 import neko.chat.repository.{MessageRepository, MessageRepositoryImpl}
+import neko.chat.auth.{Authenticator, AuthenticatorImpl}
+import neko.chat.controller.{AuthController, UserController, MessageController}
 
 object Main extends App {
 
@@ -23,17 +24,19 @@ object Main extends App {
       )
     }
   }
-  val userRepository: UserRepository = new UserRepositoryImpl
+  val authRepository: AuthRepository       = new AuthRepositoryImpl(clock)
+  val userRepository: UserRepository       = new UserRepositoryImpl
+  val messageRepository: MessageRepository = new MessageRepositoryImpl
+  val authenticator: Authenticator         = new AuthenticatorImpl(authRepository, dbPool)
+  val authController = new AuthController(
+    authRepository,
+    dbPool
+  )
   val userController = new UserController(
     userRepository,
     dbPool,
     clock
   )
-  val authController = new AuthController(
-    ???,
-    dbPool
-  )
-  val messageRepository: MessageRepository = new MessageRepositoryImpl
   val messageController = new MessageController(
     messageRepository,
     ???,
