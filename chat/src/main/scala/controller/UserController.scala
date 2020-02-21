@@ -1,20 +1,21 @@
 package neko.chat.controller
 
-import java.util.UUID
 import java.time.Clock
 
 import neko.core.http.{Request, Response}
-import neko.core.http.{OK, BAD_REQUEST, INTERNAL_SERVER_ERROR}
+import neko.core.http.{OK, BAD_REQUEST, CONFLICT, INTERNAL_SERVER_ERROR}
 import neko.core.json.Json
 import neko.core.jdbc.DBPool
 
-import neko.chat.repository.UserRepository
+import neko.chat.repository.AuthRepository.UserNotExistOrDuplicateUserNameException
+import neko.chat.service.UserCreateService
+import neko.chat.service.UserCreateService.UserCreateRequest
 import neko.chat.entity.User
 import neko.core.json.{JsonDecoder, JsonEncoder}
 import neko.core.json.JsValue
 
 class UserController(
-    userRepository: UserRepository,
+    userCreateService: UserCreateService,
     dbPool: DBPool,
     clock: Clock
 ) {
@@ -23,14 +24,13 @@ class UserController(
 
   def create(request: Request): Response = {
     val result: Either[Response, Response] = for {
-      name <- Json
+      userCreateRequest <- Json
         .parse(request.body)
-        .flatMap(nameDecoder.decode)
+        .flatMap(userCreateRequestDecoder.decode)
         .toRight(Response(BAD_REQUEST))
-      user     = User(UUID.randomUUID(), name, clock.instant())
-      dbResult = userRepository.create(user).runTx(dbPool.getConnection())
-      _ <- dbResult.left.map { e =>
-        Response(INTERNAL_SERVER_ERROR)
+      user <- userCreateService.create(userCreateRequest).runTx(dbPool.getConnection()).left.map {
+        case e: UserNotExistOrDuplicateUserNameException => Response(CONFLICT, "loginNameが既に使われています")
+        case _                                           => Response(INTERNAL_SERVER_ERROR)
       }
     } yield {
       val jsonString = Json.format(userEncoder.encode(user))
@@ -42,6 +42,16 @@ class UserController(
 }
 
 object UserController {
+
+  val userCreateRequestDecoder: JsonDecoder[UserCreateRequest] = new JsonDecoder[UserCreateRequest] {
+    override def decode(js: JsValue): Option[UserCreateRequest] = {
+      for {
+        screenName  <- (js \ "screenName").as[String]
+        loginName   <- (js \ "loginName").as[String]
+        rawPassword <- (js \ "rawPassword").as[String]
+      } yield UserCreateRequest(screenName, loginName, rawPassword)
+    }
+  }
 
   val nameDecoder: JsonDecoder[String] = new JsonDecoder[String] {
     override def decode(js: JsValue): Option[String] = {

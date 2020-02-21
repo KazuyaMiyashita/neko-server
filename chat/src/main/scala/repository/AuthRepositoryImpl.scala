@@ -10,6 +10,8 @@ import neko.chat.entity.Auth
 import neko.core.jdbc.ConnectionIO
 import neko.core.jdbc.query._
 
+import java.sql.SQLIntegrityConstraintViolationException
+
 class AuthRepositoryImpl(
     clock: Clock
 ) extends AuthRepository {
@@ -68,6 +70,20 @@ class AuthRepositoryImpl(
     val pstmt = conn.prepareStatement(query)
     pstmt.setString(1, token.value)
     pstmt.executeUpdate()
+    ()
+  }
+
+  override def create(auth: Auth): ConnectionIO[Unit] = ConnectionIO { conn =>
+    val query = "insert into auths(login_name, hashed_password, user_id) values (?, ?, ?);"
+    val pstmt = conn.prepareStatement(query)
+    pstmt.setString(1, auth.loginName)
+    pstmt.setString(2, auth.hashedPassword)
+    pstmt.setString(3, auth.userId.toString)
+    try {
+      pstmt.executeUpdate()
+    } catch {
+      case e: SQLIntegrityConstraintViolationException => throw new UserNotExistOrDuplicateUserNameException(e)
+    }
     ()
   }
 
