@@ -4,7 +4,8 @@ case class RequestHeader(
     method: Method,
     url: String,
     contentLength: Option[Int],
-    contentType: Option[String]
+    contentType: Option[String],
+    fields: Map[String, String]
 ) {
 
   def getPath: String = {

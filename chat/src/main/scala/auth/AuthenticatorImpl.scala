@@ -12,7 +12,7 @@ class AuthenticatorImpl(
 
   def auth(request: Request): Either[Response, User] = {
     for {
-      token <- request.header.getQueries
+      token <- request.header.fields
         .get("token")
         .map(Token.apply)
         .toRight(Response(BAD_REQUEST, "token required"))
@@ -20,7 +20,10 @@ class AuthenticatorImpl(
         .authenticate(token)
         .runReadOnly(dbPool.getConnection())
         .left
-        .map(_ => Response(INTERNAL_SERVER_ERROR))
+        .map { e =>
+          println(e)
+          Response(INTERNAL_SERVER_ERROR)
+        }
         .flatMap(_.toRight(Response(UNAUTHORIZED, "incorrect token")))
     } yield user
   }

@@ -21,12 +21,13 @@ class AuthController(
         .parse(request.body)
         .flatMap(loginRequestDecoder.decode)
         .toRight(Response(BAD_REQUEST, "リクエストの形式がおかしい"))
-      LoginRequest(email, rawPassword) = a
+      LoginRequest(loginName, rawPassword) = a
       token <- authRepsoitory
-        .login(email, rawPassword)
-        .runReadOnly(dbPool.getConnection())
+        .login(loginName, rawPassword)
+        .runTx(dbPool.getConnection())
         .left
-        .map { _ =>
+        .map { e =>
+          println(e)
           Response(INTERNAL_SERVER_ERROR)
         }
         .flatMap(_.toRight(Response(UNAUTHORIZED, "メールアドレスかパスワードが間違っている")))
@@ -39,15 +40,16 @@ class AuthController(
 
   def logout(request: Request): Response = {
     val result = for {
-      token <- request.header.getQueries
+      token <- request.header.fields
         .get("token")
         .map(Token.apply)
         .toRight(Response(BAD_REQUEST, "token required"))
       _ <- authRepsoitory
         .logout(token)
-        .runReadOnly(dbPool.getConnection())
+        .runTx(dbPool.getConnection())
         .left
-        .map { _ =>
+        .map { e =>
+          println(e)
           Response(INTERNAL_SERVER_ERROR)
         }
     } yield Response(OK)
@@ -58,13 +60,13 @@ class AuthController(
 
 object AuthController {
 
-  case class LoginRequest(email: String, rawPassword: String)
+  case class LoginRequest(loginName: String, rawPassword: String)
   val loginRequestDecoder: JsonDecoder[LoginRequest] = new JsonDecoder[LoginRequest] {
     override def decode(js: JsValue): Option[LoginRequest] = {
       for {
-        email       <- (js \ "email").as[String]
+        loginName   <- (js \ "loginName").as[String]
         rawPassword <- (js \ "password").as[String]
-      } yield LoginRequest(email, rawPassword)
+      } yield LoginRequest(loginName, rawPassword)
     }
   }
 

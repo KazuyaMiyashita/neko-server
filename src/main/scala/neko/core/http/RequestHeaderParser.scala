@@ -11,7 +11,7 @@ object RequestHeaderParser {
       }.toMap
     val contentLength = requestHeaderField.get("Content-Length").map(_.toInt)
     val contentType   = requestHeaderField.get("Content-Type")
-    RequestHeader(Method.fromString(method), url, contentLength, contentType)
+    RequestHeader(Method.fromString(method), url, contentLength, contentType, requestHeaderField)
   }
 
 }

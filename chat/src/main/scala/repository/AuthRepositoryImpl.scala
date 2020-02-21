@@ -22,8 +22,8 @@ class AuthRepositoryImpl(
     val query =
       """select * from tokens as t
         |  inner join users as u
-        |    where t.user_id = u.id
-        |  where token = ?;
+        |    on t.user_id = u.id
+        |  where t.token = ?;
         |""".stripMargin
     val pstmt = conn.prepareStatement(query)
     pstmt.setString(1, token.value)
@@ -45,7 +45,7 @@ class AuthRepositoryImpl(
       Auth(
         loginName = row.getString("login_name"),
         hashedPassword = row.getString("hashed_password"),
-        userId = UUID.fromString(row.getString("expires_at"))
+        userId = UUID.fromString(row.getString("user_id"))
       )
     val authOpt: Option[Auth] = select(selectAuthPstmt, mapping)(conn)
 
@@ -54,7 +54,7 @@ class AuthRepositoryImpl(
       else {
         val token = Token.createToken(loginName)
         val insertTokenQuery =
-          """insert into tokens(token, user_id, created_at) values (?, ?, ?);"""
+          """insert into tokens(token, user_id, expires_at) values (?, ?, ?);"""
         val insertTokenPstmt = conn.prepareStatement(insertTokenQuery)
         insertTokenPstmt.setString(1, token.value)
         insertTokenPstmt.setString(2, auth.userId.toString)
