@@ -12,7 +12,7 @@ trait MessageRepository {
 
   def post(message: Message): ConnectionIO[Unit]
 
-  def fetch(limit: Int): ConnectionIO[List[MessageResponse]]
+  def get(): ConnectionIO[List[MessageResponse]]
 
 }
 
