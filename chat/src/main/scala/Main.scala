@@ -47,12 +47,13 @@ object Main extends App {
   )
 
   val routes = Routes(
-    GET  -> "/"            -> (_ => HttpResponse(OK, "Hello My Server!")),
-    POST -> "/users"       -> userController.create,
-    POST -> "/auth/login"  -> authController.login,
-    POST -> "/auth/logout" -> authController.logout,
-    GET  -> "/messages"    -> messageController.get,
-    POST -> "/messages"    -> messageController.post
+    GET  -> "/"             -> (_ => HttpResponse(OK, "Hello My Server!")),
+    POST -> "/users"        -> userController.create,
+    POST -> "/auth/login"   -> authController.login,
+    POST -> "/auth/logout"  -> authController.logout,
+    GET  -> "/auth/session" -> authController.session,
+    GET  -> "/messages"     -> messageController.get,
+    POST -> "/messages"     -> messageController.post
   )
 
   val requestHandler: IRequestHandler = new HttpRequestHandler(routes)

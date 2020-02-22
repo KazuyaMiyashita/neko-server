@@ -57,6 +57,29 @@ class AuthController(
     result.merge
   }
 
+  def session(request: HttpRequest): HttpResponse = {
+    val result = for {
+      token <- request.header.cookies
+        .get("token")
+        .map(Token.apply)
+        .toRight(HttpResponse(UNAUTHORIZED))
+      userOpt <- authRepsoitory
+        .authenticate(token)
+        .runTx(dbPool.getConnection())
+        .left
+        .map { e =>
+          println(e)
+          HttpResponse(INTERNAL_SERVER_ERROR)
+        }
+    } yield {
+      userOpt match {
+        case None    => HttpResponse(UNAUTHORIZED)
+        case Some(_) => HttpResponse(OK)
+      }
+    }
+    result.merge
+  }
+
 }
 
 object AuthController {
