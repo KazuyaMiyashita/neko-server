@@ -7,8 +7,10 @@ import java.time.{Clock, Instant, ZoneId}
 
 import neko.chat.repository.share.TestDBPool
 import neko.chat.entity.{User, Auth}
+import neko.chat.auth.Token
 
 import neko.chat.repository.AuthRepository.UserNotExistOrDuplicateUserNameException
+import neko.core.jdbc.ConnectionIO
 
 class AuthRepositoryImplSpec extends FlatSpec with Matchers {
 
@@ -55,6 +57,31 @@ class AuthRepositoryImplSpec extends FlatSpec with Matchers {
     val result = io.runRollback(conn())
 
     assert(result.swap.getOrElse(throw new Exception).isInstanceOf[UserNotExistOrDuplicateUserNameException])
+
+  }
+
+  "AuthRepositoryImpl" should "create-login-authenticate-logoutできる" in {
+
+    val loginName      = "alice@example.com"
+    val rawPassword    = "mypassword"
+    val hashedPassword = AuthRepository.generateHashedPassword(rawPassword, loginName)
+    val user           = User(UUID.randomUUID(), "Alice", Instant.parse("2020-01-01T10:00:00.000Z"))
+    val auth           = Auth(loginName, hashedPassword, user.id)
+    val io: ConnectionIO[(Token, User)] = for {
+      _         <- userRepository.create(user)
+      _         <- authRepository.create(auth)
+      token     <- authRepository.login(loginName, rawPassword).map(_.get)
+      loginUser <- authRepository.authenticate(token).map(_.get)
+      _         <- authRepository.logout(token)
+    } yield (token, loginUser)
+    val result = io.runRollback(conn())
+
+    result match {
+      case Left(e) => throw e
+      case Right((_, loginUser)) => {
+        loginUser shouldEqual user
+      }
+    }
 
   }
 
