@@ -2,7 +2,7 @@ package neko.chat.controller
 
 import java.time.Clock
 
-import neko.core.http.{Request, Response}
+import neko.core.http.{HttpRequest, HttpResponse}
 import neko.core.http.{OK, BAD_REQUEST, CONFLICT, INTERNAL_SERVER_ERROR}
 import neko.core.json.Json
 import neko.core.jdbc.DBPool
@@ -22,19 +22,19 @@ class UserController(
 
   import UserController._
 
-  def create(request: Request): Response = {
-    val result: Either[Response, Response] = for {
+  def create(request: HttpRequest): HttpResponse = {
+    val result: Either[HttpResponse, HttpResponse] = for {
       userCreateRequest <- Json
         .parse(request.body)
         .flatMap(userCreateRequestDecoder.decode)
-        .toRight(Response(BAD_REQUEST))
+        .toRight(HttpResponse(BAD_REQUEST))
       user <- userCreateService.create(userCreateRequest).runTx(dbPool.getConnection()).left.map {
-        case e: UserNotExistOrDuplicateUserNameException => Response(CONFLICT, "loginNameが既に使われています")
-        case _                                           => Response(INTERNAL_SERVER_ERROR)
+        case e: UserNotExistOrDuplicateUserNameException => HttpResponse(CONFLICT, "loginNameが既に使われています")
+        case _                                           => HttpResponse(INTERNAL_SERVER_ERROR)
       }
     } yield {
       val jsonString = Json.format(userEncoder.encode(user))
-      Response(OK, jsonString).withContentType("application/json")
+      HttpResponse(OK, jsonString).withContentType("application/json")
     }
     result.merge
   }

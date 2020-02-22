@@ -1,33 +1,23 @@
 package neko.core.http
 
 import neko.core.server.{IRequest, IRequestHandler}
-import scala.io.BufferedSource
 import java.io.{BufferedWriter, OutputStreamWriter}
 
 class HttpRequestHandler(routes: Routes) extends IRequestHandler {
 
   override def handle(req: IRequest): Unit = {
-    val in    = new BufferedSource(req.in)
-    val lines = in.getLines.takeWhile(_.nonEmpty).toList
+    val httpRequest: HttpRequest = HttpRequest.fromInputStream(req.in)
     println("**request**")
-    lines.foreach(println)
-    println()
-    val header = RequestHeaderParser.parse(lines)
-    val body = header.contentLength match {
-      case None         => ""
-      case Some(length) => in.take(length).mkString
-    }
-    println(body)
+    println(httpRequest.asString)
 
-    val request  = Request(header, body)
-    val response = routes(request)
+    val httpResponse = routes(httpRequest)
 
     val out = new BufferedWriter(new OutputStreamWriter(req.out))
-    out.write(response.view)
+    out.write(httpResponse.asString)
     out.flush()
 
     println("**response**")
-    println(response.view)
+    println(httpResponse.asString)
 
     req.close()
 

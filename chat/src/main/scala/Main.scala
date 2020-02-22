@@ -47,7 +47,7 @@ object Main extends App {
   )
 
   val routes = Routes(
-    GET  -> "/"            -> (_ => Response(OK, "Hello My Server!")),
+    GET  -> "/"            -> (_ => HttpResponse(OK, "Hello My Server!")),
     POST -> "/users"       -> userController.create,
     POST -> "/auth/login"  -> authController.login,
     POST -> "/auth/logout" -> authController.logout,

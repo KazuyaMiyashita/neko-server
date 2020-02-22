@@ -1,7 +1,7 @@
 package neko.chat.controller
 
-import neko.core.http.{Request, Response}
-import neko.core.json.{Json, JsValue, JsonDecoder, JsonEncoder}
+import neko.core.http.{HttpRequest, HttpResponse}
+import neko.core.json.{Json, JsValue, JsonDecoder}
 import neko.chat.auth.Token
 import neko.chat.repository.AuthRepository
 import neko.core.http.BAD_REQUEST
@@ -15,12 +15,12 @@ class AuthController(
 
   import AuthController._
 
-  def login(request: Request): Response = {
+  def login(request: HttpRequest): HttpResponse = {
     val result = for {
       a <- Json
         .parse(request.body)
         .flatMap(loginRequestDecoder.decode)
-        .toRight(Response(BAD_REQUEST, "リクエストの形式がおかしい"))
+        .toRight(HttpResponse(BAD_REQUEST, "リクエストの形式がおかしい"))
       LoginRequest(loginName, rawPassword) = a
       token <- authRepsoitory
         .login(loginName, rawPassword)
@@ -28,31 +28,32 @@ class AuthController(
         .left
         .map { e =>
           println(e)
-          Response(INTERNAL_SERVER_ERROR)
+          HttpResponse(INTERNAL_SERVER_ERROR)
         }
-        .flatMap(_.toRight(Response(UNAUTHORIZED, "メールアドレスかパスワードが間違っている")))
+        .flatMap(_.toRight(HttpResponse(UNAUTHORIZED, "メールアドレスかパスワードが間違っている")))
     } yield {
-      val jsonString = Json.format(tokenEncoder.encode(token))
-      Response(OK, jsonString).withContentType("application/json")
+      HttpResponse(OK)
+        .withContentType("application/json")
+        .withHeader("Set-Cookie", s"token=${token.value}")
     }
     result.merge
   }
 
-  def logout(request: Request): Response = {
+  def logout(request: HttpRequest): HttpResponse = {
     val result = for {
-      token <- request.header.fields
+      token <- request.header.cookies
         .get("token")
         .map(Token.apply)
-        .toRight(Response(BAD_REQUEST, "token required"))
+        .toRight(HttpResponse(BAD_REQUEST, "token required"))
       _ <- authRepsoitory
         .logout(token)
         .runTx(dbPool.getConnection())
         .left
         .map { e =>
           println(e)
-          Response(INTERNAL_SERVER_ERROR)
+          HttpResponse(INTERNAL_SERVER_ERROR)
         }
-    } yield Response(OK)
+    } yield HttpResponse(OK)
     result.merge
   }
 
@@ -67,12 +68,6 @@ object AuthController {
         loginName   <- (js \ "loginName").as[String]
         rawPassword <- (js \ "password").as[String]
       } yield LoginRequest(loginName, rawPassword)
-    }
-  }
-
-  val tokenEncoder: JsonEncoder[Token] = new JsonEncoder[Token] {
-    override def encode(token: Token): JsValue = {
-      Json.obj("token" -> Json.str(token.value))
     }
   }
 

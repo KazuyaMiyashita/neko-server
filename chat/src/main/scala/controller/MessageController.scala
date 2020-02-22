@@ -3,7 +3,7 @@ package neko.chat.controller
 import java.util.UUID
 import java.time.Clock
 
-import neko.core.http.{Request, Response}
+import neko.core.http.{HttpRequest, HttpResponse}
 import neko.core.http.{OK, BAD_REQUEST, INTERNAL_SERVER_ERROR}
 import neko.core.json.Json
 import neko.core.jdbc.DBPool
@@ -24,32 +24,32 @@ class MessageController(
 
   import MessageController._
 
-  def get(request: Request): Response = {
-    val result: Either[Response, Response] = for {
+  def get(request: HttpRequest): HttpResponse = {
+    val result: Either[HttpResponse, HttpResponse] = for {
       user <- authenticator.auth(request)
       messages <- messageRepository.get().runReadOnly(dbPool.getConnection()).left.map { e =>
-        Response(INTERNAL_SERVER_ERROR)
+        HttpResponse(INTERNAL_SERVER_ERROR)
       }
     } yield {
       val jsonString = Json.format(postResponseEncoder.encode(messages))
-      Response(OK, jsonString).withContentType("application/json")
+      HttpResponse(OK, jsonString).withContentType("application/json")
     }
     result.merge
   }
 
-  def post(request: Request): Response = {
-    val result: Either[Response, Response] = for {
+  def post(request: HttpRequest): HttpResponse = {
+    val result: Either[HttpResponse, HttpResponse] = for {
       user <- authenticator.auth(request)
       postRequest <- Json
         .parse(request.body)
         .flatMap(postRequestDecoder.decode)
-        .toRight(Response(BAD_REQUEST))
+        .toRight(HttpResponse(BAD_REQUEST))
       newMessage = Message(UUID.randomUUID(), user.id, postRequest.body, clock.instant())
       _ <- messageRepository.post(newMessage).runTx(dbPool.getConnection()).left.map { e =>
-        Response(INTERNAL_SERVER_ERROR)
+        HttpResponse(INTERNAL_SERVER_ERROR)
       }
     } yield {
-      Response(OK).withContentType("application/json")
+      HttpResponse(OK).withContentType("application/json")
     }
     result.merge
   }

@@ -1,15 +1,13 @@
 package neko.core.http
 
-case class RequestHeader(
-    method: Method,
-    url: String,
-    contentLength: Option[Int],
-    contentType: Option[String],
-    fields: Map[String, String]
+case class HttpRequestLine(
+    method: HttpMethod,
+    uri: String,
+    httpVersion: String
 ) {
 
   def getPath: String = {
-    url.split('?')(0)
+    uri.split('?')(0)
   }
 
   def getQueries: Map[String, String] = {
@@ -23,7 +21,7 @@ case class RequestHeader(
         .toMap
     }
 
-    url.split('?') match {
+    uri.split('?') match {
       case Array(_, query_flagment) => {
         query_flagment.split('#') match {
           case Array(query)    => splitAmpersand(query)
@@ -36,10 +34,21 @@ case class RequestHeader(
   }
 
   def getFlagment: Option[String] = {
-    url.split('#') match {
+    uri.split('#') match {
       case Array(_, flagment) => Some(flagment)
       case _                  => None
     }
+  }
+
+  def asString: String = s"${method.asString} ${uri} ${httpVersion}"
+
+}
+
+object HttpRequestLine {
+
+  def fromString(line: String): HttpRequestLine = {
+    val Array(method, uri, httpVersion) = line.split(" ")
+    HttpRequestLine(HttpMethod.fromString(method), uri, httpVersion)
   }
 
 }
