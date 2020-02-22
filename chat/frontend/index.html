@@ -1,0 +1,53 @@
+<html lang="ja">
+  <head>
+    <title>Serviver Agent</title>
+    <meta charset="utf-8">
+    <style>
+    </style>
+    <script src="./chat.js"></script>
+  </head>
+  <body>
+    <form name="myform" onsubmit="return checkText()">
+      <input name="mytext" type="text" />
+      <input type="submit" value="送信" />
+  </form>
+    <h1>Serviver Agent Chat</h1>
+    <div id="post"></div>
+    <hr>
+    <div id="loginOrCreateUser" style="display: true;">
+      <h2>ログイン画面</h2>
+      <table>
+        <tr>
+          <td>ログインネーム</td>
+          <td><input name="loginName" type="text"></td>
+        </tr>
+        <tr>
+          <td>パスワード</td>
+          <td><input name="password" type="password"></td>
+        </tr>
+      </table>
+      <form name="createUserForm" action="" method="POST" onsubmit="return createUser()">
+        <h2>ユーザー作成画面</h2>
+        <table>
+          <tr>
+            <td>スクリーンネーム</td>
+            <td><input name="screenName" type="text"></td>
+          </tr>
+          <tr>
+            <td>ログインネーム</td>
+            <td><input name="loginName" type="text"></td>
+          </tr>
+          <tr>
+            <td>パスワード</td>
+            <td><input name="password" type="password"></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td><input type="submit" value="作成"></td>
+          </tr>
+        </table>
+      </form>
+    </div>
+    <div id="chat"></div>
+  </body>
+</html>

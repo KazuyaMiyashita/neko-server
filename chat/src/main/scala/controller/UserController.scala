@@ -48,7 +48,7 @@ object UserController {
       for {
         screenName  <- (js \ "screenName").as[String]
         loginName   <- (js \ "loginName").as[String]
-        rawPassword <- (js \ "rawPassword").as[String]
+        rawPassword <- (js \ "password").as[String]
       } yield UserCreateRequest(screenName, loginName, rawPassword)
     }
   }
