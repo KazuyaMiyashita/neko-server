@@ -18,7 +18,7 @@ object Token {
     val tsLen  = ts.length
     val length = 64
 
-    Token("Bearer " + List.fill(length)(ts(rnd.nextInt(tsLen))).mkString)
+    Token(List.fill(length)(ts(rnd.nextInt(tsLen))).mkString)
   }
 
 }
