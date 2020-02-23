@@ -34,7 +34,7 @@ class AuthController(
     } yield {
       HttpResponse(OK)
         .withContentType("application/json")
-        .withHeader("Set-Cookie", s"token=${token.value}")
+        .withHeader("Set-Cookie", s"token=${token.value}; Path=/")
     }
     result.merge
   }

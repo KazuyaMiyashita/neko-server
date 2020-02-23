@@ -35,17 +35,19 @@ object HttpResponse {
 
   def apply(status: HttpStatus) = {
     val headers = Map(
-      ("Content-Length"              -> "0"),
-      ("Access-Control-Allow-Origin" -> "http://localhost:8000"),
-      ("Connection"                  -> "close")
+      ("Content-Length"                   -> "0"),
+      ("Access-Control-Allow-Origin"      -> "http://localhost:8000"),
+      ("Access-Control-Allow-Credentials" -> "true"),
+      ("Connection"                       -> "close")
     )
     new HttpResponse(status, headers, None)
   }
   def apply(status: HttpStatus, body: String) = {
     val headers = Map(
-      ("Content-Length"              -> body.getBytes.length.toString),
-      ("Access-Control-Allow-Origin" -> "http://localhost:8000"),
-      ("Connection"                  -> "close")
+      ("Content-Length"                   -> body.getBytes.length.toString),
+      ("Access-Control-Allow-Origin"      -> "http://localhost:8000"),
+      ("Access-Control-Allow-Credentials" -> "true"),
+      ("Connection"                       -> "close")
     )
     new HttpResponse(status, headers, Some(body))
   }

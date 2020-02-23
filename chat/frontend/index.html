@@ -8,9 +8,7 @@
   </head>
   <body>
     <h1>Serviver Agent Chat</h1>
-    <div id="post"></div>
-    <hr>
-    <div id="loginOrCreateUser" style="display: true;">
+    <div class="whenLoggedOut">
       <form name="loginForm" action="" method="POST" onsubmit="return login()">
         <h2>ログイン画面</h2>
         <table>
@@ -50,11 +48,25 @@
         </table>
       </form>
     </div>
-    <div id="chat">
+    <div class="whenLoggedIn" style="display: none;">
       ログイン中
-      <form name="createUserForm" onsubmit="return logout()">
+      <form name="logoutForm" action="" method="POST" onsubmit="return logout()">
         <input type="submit" value="ログアウト">
       </form>
+      <form name="postForm" action="" method="POST" onsubmit="return post()">
+        <input name="body" type="text">
+        <input type="submit" value="投稿">
+      </form>
+      <form name="getMessagesForm" action="" method="POST" onsubmit="return getMessages()">
+        <input type="submit" value="更新">
+      </form>
+      <hr>
+      <div id="messagesBox"></div>
+      <template id="messageTemplate">
+        <div class="message">
+          <span class="userScreenName"></span> :<span class="body"></span>
+        </div>
+      </template>
     </div>
   </body>
 </html>

@@ -3,21 +3,26 @@ console.log("chat.js");
 var isLogin = false;
 var serverAddr = "http://localhost:2200";
 
-var loginOrCreateUserDom = null
-var chatDom = null
-
 window.onload = function() {
-  loginOrCreateUserDom = document.getElementById("loginOrCreateUser");
-  chatDom = document.getElementById("chat");
   checkCurrentSession();
 }
 
 function changeIsLogin(_isLogin) {
   isLogin = _isLogin;
-  loginOrCreateUserDom.style.display = isLogin ? "none" : "block";
-  chatDom.style.display = isLogin ? "block" : "none";
+  var whenLoggedInDivs = document.getElementsByClassName("whenLoggedIn");
+  console.log(whenLoggedInDivs);
+  Array.prototype.forEach.call(whenLoggedInDivs, div => {
+    console.log(div);
+    div.style.display = isLogin ? "block" : "none";
+  });
+  var whenLoggedOutInDivs = document.getElementsByClassName("whenLoggedOut");
+  Array.prototype.forEach.call(whenLoggedOutInDivs, div => {
+    console.log(div);
+    div.style.display = isLogin ? "none" : "block";
+  });
   if (isLogin) {
     console.log("ログインしている");
+    getMessages();
   } else {
     console.log("ログインしていない");
   }
@@ -75,8 +80,7 @@ function createUser() {
       case 3:
         break;
       case 4:
-        // ログイン処理
-        console.log(xhr.repsonse);
+        alert("ユーザーが作成できました。ログインしてください。")
         if (xhr.status == 500) {
           alert("something wrong!");
         }
@@ -123,6 +127,7 @@ function login() {
     }
   }
   xhr.open("POST", serverAddr + "/auth/login", false);
+  xhr.withCredentials = true;
   xhr.send(json);
   xhr.abort();
 
@@ -149,8 +154,75 @@ function logout() {
     }
   }
   xhr.open("POST", serverAddr + "/auth/logout", false);
+  xhr.withCredentials = true;
   xhr.send();
   xhr.abort();
 
   return false;
+}
+
+function post() {
+  var json = null;
+  try {
+    json = JSON.stringify({
+      body: document.postForm.body.value,
+    });
+  } catch {
+    console.log("データが揃ってないよん");
+    return false;
+  }
+
+  console.log(json);
+
+  var xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState == 4) {
+      if (xhr.status == 200) {
+        getMessages();
+        document.postForm.reset();
+      }
+      if (xhr.status == 500) {
+        alert("something wrong!");
+      }
+    }
+  }
+  xhr.open("POST", serverAddr + "/messages", false);
+  xhr.withCredentials = true;
+  xhr.send(json);
+  xhr.abort();
+
+  return false;
+}
+
+function getMessages() {
+  var xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState == 4) {
+      if (xhr.status == 200) {
+        var messages = JSON.parse(xhr.response);
+        console.log(messages);
+        updateMessages(messages);
+      }
+      if (xhr.status == 500) {
+        alert("something wrong!");
+      }
+    }
+  }
+  xhr.open("GET", serverAddr + "/messages", false);
+  xhr.withCredentials = true;
+  xhr.send();
+  xhr.abort();
+
+  return false;
+}
+
+function updateMessages(messages) {
+  var messagesBox = document.getElementById("messagesBox");
+  messagesBox.innerHTML = "";
+  messages.forEach(message => {
+    console.log(message);
+    var mDiv = document.createElement("div");
+    mDiv.innerText = message.userScreenName + " : " + message.body;
+    messagesBox.appendChild(mDiv);
+  });
 }
