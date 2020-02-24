@@ -7,7 +7,7 @@ import java.util.concurrent.Executors
 import java.net.SocketException
 
 class ServerSocketHandler(
-    requestHandler: IRequestHandler
+    requestHandler: RequestHandler
 ) extends Thread {
 
   val serverSocket: ServerSocket             = new ServerSocket(2200)

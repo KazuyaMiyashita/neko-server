@@ -2,7 +2,7 @@ package neko.core.http
 
 import scala.util.matching.Regex
 
-trait HttpMethod {
+sealed trait HttpMethod {
 
   def ->(url: String) = RouteBuilder(this, url.r)
   def ->(re: Regex)   = RouteBuilder(this, re)

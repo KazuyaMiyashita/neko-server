@@ -1,25 +1,26 @@
 package neko.core.http
 
-import neko.core.server.{IRequest, IRequestHandler}
+import neko.core.server.RequestHandler
+import java.net.Socket
 import java.io.{BufferedWriter, OutputStreamWriter}
 
-class HttpRequestHandler(routes: Routes) extends IRequestHandler {
+class HttpRequestHandler(routes: Routes) extends RequestHandler {
 
-  override def handle(req: IRequest): Unit = {
-    val httpRequest: HttpRequest = HttpRequest.fromInputStream(req.in)
+  override def handle(socket: Socket): Unit = {
+    val httpRequest: HttpRequest = HttpRequest.fromInputStream(socket.getInputStream)
     println("**request**")
     println(httpRequest.asString)
 
     val httpResponse = routes(httpRequest)
 
-    val out = new BufferedWriter(new OutputStreamWriter(req.out))
+    val out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream))
     out.write(httpResponse.asString)
     out.flush()
 
     println("**response**")
     println(httpResponse.asString)
 
-    req.close()
+    socket.close()
 
   }
 

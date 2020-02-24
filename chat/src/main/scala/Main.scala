@@ -57,7 +57,7 @@ object Main extends App {
     POST -> "/messages"     -> messageController.post
   )
 
-  val requestHandler: IRequestHandler = new HttpRequestHandler(routes)
+  val requestHandler: RequestHandler = new HttpRequestHandler(routes)
 
   val serverSocketHandler = new ServerSocketHandler(
     requestHandler
