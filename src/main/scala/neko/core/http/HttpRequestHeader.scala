@@ -15,6 +15,7 @@ case class HttpRequestHeader(
       .mapValues(_.map(_._2))
       .toMap
 
+  // TODO: text/plain;charset=UTF-8 とかの;区切りに対応する
   def contentLength: Option[Int]  = fields.get("Content-Length").flatMap(_.headOption).map(_.toInt)
   def contentType: Option[String] = fields.get("Content-Type").flatMap(_.headOption)
   def cookies: Map[String, String] = {

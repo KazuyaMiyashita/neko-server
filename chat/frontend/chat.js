@@ -49,10 +49,9 @@ function checkCurrentSession() {
         }
     }
   }
-  xhr.open("GET", serverAddr + "/auth/session", false);
+  xhr.open("GET", serverAddr + "/auth/session", true);
   xhr.withCredentials = true;
   xhr.send();
-  xhr.abort();
 }
 
 function createUser() {
@@ -86,10 +85,8 @@ function createUser() {
         }
     }
   }
-  xhr.open("POST", serverAddr + "/users", false);
+  xhr.open("POST", serverAddr + "/users", true);
   xhr.send(json);
-  xhr.abort();
-
   return false;
 }
 
@@ -126,11 +123,9 @@ function login() {
         }
     }
   }
-  xhr.open("POST", serverAddr + "/auth/login", false);
+  xhr.open("POST", serverAddr + "/auth/login", true);
   xhr.withCredentials = true;
   xhr.send(json);
-  xhr.abort();
-
   return false;
 }
 
@@ -153,11 +148,9 @@ function logout() {
         }
     }
   }
-  xhr.open("POST", serverAddr + "/auth/logout", false);
+  xhr.open("POST", serverAddr + "/auth/logout", true);
   xhr.withCredentials = true;
   xhr.send();
-  xhr.abort();
-
   return false;
 }
 
@@ -186,11 +179,9 @@ function post() {
       }
     }
   }
-  xhr.open("POST", serverAddr + "/messages", false);
+  xhr.open("POST", serverAddr + "/messages", true);
   xhr.withCredentials = true;
   xhr.send(json);
-  xhr.abort();
-
   return false;
 }
 
@@ -208,11 +199,9 @@ function getMessages() {
       }
     }
   }
-  xhr.open("GET", serverAddr + "/messages", false);
+  xhr.open("GET", serverAddr + "/messages", true);
   xhr.withCredentials = true;
   xhr.send();
-  xhr.abort();
-
   return false;
 }
 
