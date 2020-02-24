@@ -38,7 +38,6 @@ object HttpRequest {
 
     val line   = HttpRequestLine.fromString(firstHalf.head)
     val header = HttpRequestHeader.fromString(firstHalf.tail)
-    println(header)
     val body = header.contentLength match {
       case None => ""
       case Some(length) => {
