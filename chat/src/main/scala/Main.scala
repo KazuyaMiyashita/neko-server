@@ -14,14 +14,15 @@ import neko.chat.service.UserCreateService
 
 object Main extends App {
 
-  val clock = Clock.systemUTC()
+  val config = Config.fromEnv()
+  val clock  = Clock.systemUTC()
   val dbPool: DBPool = new DBPool {
     Class.forName("com.mysql.cj.jdbc.Driver")
     override def getConnection(): Connection = {
       DriverManager.getConnection(
-        "jdbc:mysql://localhost:13306/db",
-        "root",
-        ""
+        config.db.url,
+        config.db.user,
+        config.db.password
       )
     }
   }
