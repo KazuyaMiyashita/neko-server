@@ -36,7 +36,7 @@ object HttpResponse {
   def apply(status: HttpStatus) = {
     val headers = Map(
       ("Content-Length"                   -> "0"),
-      ("Access-Control-Allow-Origin"      -> "http://localhost:8000"),
+      ("Access-Control-Allow-Origin"      -> "http://localhost:8000"), // これアプリケーションじゃなくてcoreの方にあるの何で？
       ("Access-Control-Allow-Credentials" -> "true"),
       ("Connection"                       -> "close")
     )
