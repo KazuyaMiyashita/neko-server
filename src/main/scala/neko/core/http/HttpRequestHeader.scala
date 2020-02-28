@@ -20,10 +20,14 @@ case class HttpRequestHeader(
   def contentType: Option[String] = fields.get("Content-Type").flatMap(_.headOption)
   def cookies: Map[String, String] = {
     val list: Seq[String] = fields.get("Cookie").getOrElse(Seq.empty)
-    list.map { line =>
-      val Array(key, value) = line.split("=", 2)
-      key -> value
-    }.toMap
+    list
+      .flatMap(_.split(";"))
+      .map(_.trim)
+      .map { line =>
+        val Array(key, value) = line.split("=", 2)
+        key -> value
+      }
+      .toMap
   }
 
   def asString = lines.mkString("\n")
