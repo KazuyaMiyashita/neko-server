@@ -1,1 +1,4 @@
 target/
+.metals
+chat/frontend/node_modules
+chat/frontend/yarn-error.log
