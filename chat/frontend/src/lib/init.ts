@@ -1,7 +1,7 @@
 import createElement from 'virtual-dom/create-element';
 import diff from 'virtual-dom/diff';
 import { patch } from 'virtual-dom';
-import { Root } from './types';
+import { Root } from '../components/types';
 
 export default <State = {}>(
   root: Root<State>,
