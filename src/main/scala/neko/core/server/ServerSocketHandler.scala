@@ -10,21 +10,18 @@ class ServerSocketHandler(
     requestHandler: RequestHandler
 ) extends Thread {
 
-  val serverSocket: ServerSocket             = new ServerSocket(2200)
+  val server: ServerSocket                   = new ServerSocket(2200)
   val socketExecutorService: ExecutorService = Executors.newFixedThreadPool(32)
 
-  var isActive                = true
   var acceptionSocket: Socket = null
   val socketTerminator        = new SocketTerminator
 
   override def run(): Unit = {
     try {
-      while (isActive) {
-        acceptionSocket = serverSocket.accept()
-        if (isActive) {
-          socketTerminator.register(acceptionSocket)
-          socketExecutorService.execute(new SocketHandler(acceptionSocket, requestHandler, socketTerminator))
-        }
+      while (!server.isClosed()) {
+        acceptionSocket = server.accept()
+        socketTerminator.register(acceptionSocket)
+        socketExecutorService.execute(new SocketHandler(acceptionSocket, requestHandler, socketTerminator))
       }
     } catch {
       case _: SocketException => println("server socket closed")
@@ -34,13 +31,11 @@ class ServerSocketHandler(
   }
 
   def terminate(): Unit = {
-    isActive = false
-    serverSocket.close()
-    socketExecutorService.shutdown()
-    if ((acceptionSocket ne null) && !acceptionSocket.isClosed()) {
-      acceptionSocket.close()
+    if (!server.isClosed()) {
+      server.close()
+      socketExecutorService.shutdown()
+      socketTerminator.terminateAll()
     }
-    socketTerminator.terminateAll()
   }
 
 }
