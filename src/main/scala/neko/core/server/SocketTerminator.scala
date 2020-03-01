@@ -12,9 +12,7 @@ class SocketTerminator {
   def release(s: Socket): Unit  = sockets.remove(s)
 
   def terminateAll(): Unit = {
-    sockets.foreach { s =>
-      if (!s.isClosed()) s.close()
-    }
+    sockets.foreach(_.close())
     sockets.clear()
   }
 
