@@ -5,8 +5,8 @@ import java.net.Socket
 
 class SocketTerminator {
 
-  val _sockets = mutable.Set.empty[Socket]
-  def sockets  = synchronized(_sockets)
+  private val _sockets = mutable.Set.empty[Socket]
+  private def sockets  = synchronized(_sockets)
 
   def register(s: Socket): Unit = sockets.add(s)
   def release(s: Socket): Unit  = sockets.remove(s)

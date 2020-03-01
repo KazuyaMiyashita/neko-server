@@ -6,8 +6,10 @@ import java.net.SocketException
 class SocketHandler(
     socket: Socket,
     requestHandler: RequestHandler,
-    socketManager: SocketTerminator
+    socketTerminator: SocketTerminator
 ) extends Thread {
+
+  socketTerminator.register(socket)
 
   override def run(): Unit = {
     try {
@@ -22,7 +24,7 @@ class SocketHandler(
   def terminate(): Unit = {
     if (!socket.isClosed()) {
       socket.close()
-      socketManager.release(socket)
+      socketTerminator.release(socket)
     }
   }
 
