@@ -20,8 +20,10 @@ class SocketHandler(
   }
 
   def terminate(): Unit = {
-    socket.close()
-    socketManager.release(socket)
+    if (!socket.isClosed()) {
+      socket.close()
+      socketManager.release(socket)
+    }
   }
 
 }
