@@ -23,7 +23,7 @@
   <section class="section">
     <div class="container">
       <div class="whenLoggedOut">
-        <form name="loginForm" action="" method="POST" onsubmit="return login()">
+        <form name="loginForm" action="/" method="POST" onsubmit="login()">
           <h2 class="title is-2">ログイン画面</h2>
           <div class="field">
             <div class="control">
@@ -32,7 +32,7 @@
           </div>
           <div class="field">
             <div class="control">
-              <input name="password " class="input" type="password" placeholder="パスワード">
+              <input name="password" class="input" type="password" placeholder="パスワード">
             </div>
           </div>
           <div class="field">
@@ -44,7 +44,7 @@
       </div>
     </div>
     <div class="container">
-      <form name="createUserForm" action="" method="POST" onsubmit="return createUser()">
+      <form name="createUserForm" action="/" method="POST" onsubmit="createUser()">
         <h2 class="title is-2">ユーザー作成画面</h2>
         <div class="field">
           <div class="control">
@@ -58,7 +58,7 @@
         </div>
         <div class="field">
           <div class="control ">
-            <input name="password " class="input" type="password" placeholder="パスワード">
+            <input name="password" class="input" type="password" placeholder="パスワード">
           </div>
         </div>
         <input type="submit" class="button is-light" value="作成">
@@ -70,14 +70,14 @@
     <div class="container">
       <div class="whenLoggedIn" style="display: none;">
         ログイン中
-        <form name="logoutForm" action="" method="POST" onsubmit="return logout()">
+        <form name="logoutForm" acvtion="/" method="POST" onsubmit="logout();">
           <input type="submit" class="button is-light" value="ログアウト">
         </form>
-        <form name="postForm" action="" method="POST" onsubmit="return post()">
+        <form name="postForm" acvtion="/" method="POST" onsubmit="post()">
           <input name="body" class="input" type="text">
           <input type="submit" class="button is-light" value="投稿">
         </form>
-        <form name="getMessagesForm" action="" method="POST" onsubmit="return getMessages()">
+        <form name="getMessagesForm" acvtion="/" method="POST" onsubmit="getMessages()">
           <input type="submit" class="button is-light" value="更新">
         </form>
       </div>
