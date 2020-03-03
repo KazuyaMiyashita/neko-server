@@ -8,6 +8,7 @@ class SocketHandler(
     requestHandler: RequestHandler,
     socketTerminator: SocketTerminator
 ) extends Thread {
+
   override def run(): Unit = {
     try {
       socketTerminator.register(socket)
@@ -15,13 +16,9 @@ class SocketHandler(
     } catch {
       case _: SocketException => println("socket closed")
     } finally {
-      terminate()
-    }
-  }
-  def terminate(): Unit = {
-    if (!socket.isClosed()) {
       socket.close()
       socketTerminator.release(socket)
     }
   }
+
 }
