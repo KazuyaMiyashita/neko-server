@@ -17,7 +17,7 @@ class ServerSocketHandler(
   override def run(): Unit = {
     try {
       while (!server.isClosed()) {
-        val socket = server.accept()
+        val socket: Socket = server.accept()
         socketTerminator.register(socket)
         socketExecutorService.execute(new SocketHandler(socket, requestHandler, socketTerminator))
       }
