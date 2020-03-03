@@ -2,3 +2,4 @@ target/
 
 /chat/frontend/node_modules/
 /chat/frontend/dist/
+chat/frontend/.cache/

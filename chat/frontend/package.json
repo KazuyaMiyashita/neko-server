@@ -8,9 +8,6 @@
   },
   "scripts": {
     "serve": "parcel src/index.html -p 8000",
-    "build": "parcel build src/index.html --out-dir dist/"
-  },
-  "dependencies": {
-    "bulma": "^0.8.0"
+    "build": "rm dist/* && parcel build src/index.html --out-dir dist/"
   }
 }
