@@ -19,15 +19,11 @@ $ cd gitをクローンしたとこ
 $ sbt
 sbt > project chat
 chat > run
-```
 
-# ねこフロント
-```
 別のターミナル
-$ brew install yarn
 $ cd gitをクローンしたとこ
 $ cd chat/frontend
-$ yarn install
-$ yarn serve
+$ python -m http.server 8000 (https://qiita.com/okhrn/items/4d3c74563154f191ba16 あたり参考)
 ブラウザで localhost:8000
 ```
+

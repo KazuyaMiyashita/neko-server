@@ -1,0 +1,72 @@
+<html lang="ja">
+  <head>
+    <title>Serviver Agent</title>
+    <meta charset="utf-8">
+    <style>
+    </style>
+    <script src="./chat.js"></script>
+  </head>
+  <body>
+    <h1>Serviver Agent Chat</h1>
+    <div class="whenLoggedOut">
+      <form name="loginForm" action="" method="POST" onsubmit="return login()">
+        <h2>ログイン画面</h2>
+        <table>
+          <tr>
+            <td>ログインネーム</td>
+            <td><input name="loginName" type="text"></td>
+          </tr>
+          <tr>
+            <td>パスワード</td>
+            <td><input name="password" type="password"></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td><input type="submit" value="ログイン"></td>
+          </tr>
+        </table>
+      </form>
+      <form name="createUserForm" action="" method="POST" onsubmit="return createUser()">
+        <h2>ユーザー作成画面</h2>
+        <table>
+          <tr>
+            <td>スクリーンネーム</td>
+            <td><input name="screenName" type="text"></td>
+          </tr>
+          <tr>
+            <td>ログインネーム</td>
+            <td><input name="loginName" type="text"></td>
+          </tr>
+          <tr>
+            <td>パスワード</td>
+            <td><input name="password" type="password"></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td><input type="submit" value="作成"></td>
+          </tr>
+        </table>
+      </form>
+    </div>
+    <div class="whenLoggedIn" style="display: none;">
+      ログイン中
+      <form name="logoutForm" action="" method="POST" onsubmit="return logout()">
+        <input type="submit" value="ログアウト">
+      </form>
+      <form name="postForm" action="" method="POST" onsubmit="return post()">
+        <input name="body" type="text">
+        <input type="submit" value="投稿">
+      </form>
+      <form name="getMessagesForm" action="" method="POST" onsubmit="return getMessages()">
+        <input type="submit" value="更新">
+      </form>
+      <hr>
+      <div id="messagesBox"></div>
+      <template id="messageTemplate">
+        <div class="message">
+          <span class="userScreenName"></span> :<span class="body"></span>
+        </div>
+      </template>
+    </div>
+  </body>
+</html>

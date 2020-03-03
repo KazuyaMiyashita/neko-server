@@ -3,7 +3,7 @@ console.log("chat.js");
 var isLogin = false;
 var serverAddr = "http://localhost:2200";
 
-window.onload = function () {
+window.onload = function() {
   checkCurrentSession();
 }
 
@@ -31,7 +31,7 @@ function changeIsLogin(_isLogin) {
 function checkCurrentSession() {
   console.log(document.cookie);
   var xhr = new XMLHttpRequest();
-  xhr.onreadystatechange = function () {
+  xhr.onreadystatechange = function() {
     switch (xhr.readyState) {
       case 0:
         break;
@@ -54,7 +54,7 @@ function checkCurrentSession() {
   xhr.send();
 }
 
-globalThis.createUser = function () {
+function createUser() {
   var json = null;
   try {
     json = JSON.stringify({
@@ -68,7 +68,7 @@ globalThis.createUser = function () {
   }
 
   var xhr = new XMLHttpRequest();
-  xhr.onreadystatechange = function () {
+  xhr.onreadystatechange = function() {
     switch (xhr.readyState) {
       case 0:
         break;
@@ -90,7 +90,7 @@ globalThis.createUser = function () {
   return false;
 }
 
-globalThis.login = function () {
+function login() {
   var json = null;
   try {
     json = JSON.stringify({
@@ -105,7 +105,7 @@ globalThis.login = function () {
   console.log(json);
 
   var xhr = new XMLHttpRequest();
-  xhr.onreadystatechange = function () {
+  xhr.onreadystatechange = function() {
     switch (xhr.readyState) {
       case 0:
         break;
@@ -129,9 +129,9 @@ globalThis.login = function () {
   return false;
 }
 
-globalThis.logout = function () {
+function logout() {
   var xhr = new XMLHttpRequest();
-  xhr.onreadystatechange = function () {
+  xhr.onreadystatechange = function() {
     switch (xhr.readyState) {
       case 0:
         break;
@@ -154,7 +154,7 @@ globalThis.logout = function () {
   return false;
 }
 
-globalThis.post = function () {
+function post() {
   var json = null;
   try {
     json = JSON.stringify({
@@ -168,7 +168,7 @@ globalThis.post = function () {
   console.log(json);
 
   var xhr = new XMLHttpRequest();
-  xhr.onreadystatechange = function () {
+  xhr.onreadystatechange = function() {
     if (xhr.readyState == 4) {
       if (xhr.status == 200) {
         getMessages();
@@ -185,9 +185,9 @@ globalThis.post = function () {
   return false;
 }
 
-globalThis.getMessages = function () {
+function getMessages() {
   var xhr = new XMLHttpRequest();
-  xhr.onreadystatechange = function () {
+  xhr.onreadystatechange = function() {
     if (xhr.readyState == 4) {
       if (xhr.status == 200) {
         var messages = JSON.parse(xhr.response);
@@ -205,7 +205,7 @@ globalThis.getMessages = function () {
   return false;
 }
 
-globalThis.updateMessages = function (messages) {
+function updateMessages(messages) {
   var messagesBox = document.getElementById("messagesBox");
   messagesBox.innerHTML = "";
   messages.forEach(message => {
