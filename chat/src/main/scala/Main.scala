@@ -47,17 +47,20 @@ object Main extends App {
     clock
   )
 
-  val routes = Routes(
-    GET  -> "/"             -> (_ => HttpResponse(OK, "Hello My Server!")),
-    POST -> "/users"        -> userController.create,
-    POST -> "/auth/login"   -> authController.login,
-    POST -> "/auth/logout"  -> authController.logout,
-    GET  -> "/auth/session" -> authController.session,
-    GET  -> "/messages"     -> messageController.get,
-    POST -> "/messages"     -> messageController.post
-  )
+  val application = {
+    import RoutingDSL._
+    new Routes(
+      GET  -> "/"             -> (_ => HttpResponse(OK, "Hello My Server!")),
+      POST -> "/users"        -> userController.create,
+      POST -> "/auth/login"   -> authController.login,
+      POST -> "/auth/logout"  -> authController.logout,
+      GET  -> "/auth/session" -> authController.session,
+      GET  -> "/messages"     -> messageController.get,
+      POST -> "/messages"     -> messageController.post
+    )
+  }
 
-  val requestHandler: RequestHandler = new HttpRequestHandler(routes)
+  val requestHandler: RequestHandler = new HttpRequestHandler(application)
 
   val serverSocketHandler = new ServerSocketHandler(
     requestHandler
