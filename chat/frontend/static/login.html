@@ -1,0 +1,32 @@
+<html lang="ja">
+
+<head>
+  <title>Serviver Agent</title>
+  <meta charset="utf-8">
+  <style>
+  </style>
+  <script src="./login.js"></script>
+</head>
+
+<body>
+  <h1>ログイン画面</h1>
+  <div class="whenLoggedOut" id="login">
+    <form name="loginForm" action="" method="POST" onsubmit="return login()">
+      <div className="">
+        <tr>
+          <td>ログインネーム</td>
+          <td><input name="loginName" type="text"></td>
+        </tr>
+        <tr>
+          <td>パスワード</td>
+          <td><input name="password" type="password"></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td><input type="submit" value="ログイン"></td>
+        </tr>
+      </table>
+    </form>
+</body>
+
+</html>
