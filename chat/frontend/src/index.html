@@ -7,66 +7,89 @@
   <script src="./chat.js"></script>
 </head>
 <body>
-  <h1>Serviver Agent Chat</h1>
+  <div class="header">
+    <section class="section hero">
+      <div class="container">
+        <h1 class="title">
+          Serviver Agent Chat
+        </h1>
+        <h2 class="subtitle">
+          it is survive..?
+        </h2>
+      </div>
+    </section>
+  </div>
   <div class="whenLoggedOut">
-    <form name="loginForm" acvtion="/" method="POST" onsubmit="return login()">
-      <h2>ログイン画面</h2>
-      <table>
-        <tr>
-          <td>ログインネーム</td>
-          <td><input name="loginName" type="text"></td>
-        </tr>
-        <tr>
-          <td>パスワード</td>
-          <td><input name="password" type="password"></td>
-        </tr>
-        <tr>
-          <td></td>
-          <td><input type="submit" value="ログイン"></td>
-        </tr>
-      </table>
-    </form>
-    <form name="createUserForm" acvtion="/" method="POST" onsubmit="return createUser()">
-      <h2>ユーザー作成画面</h2>
-      <table>
-        <tr>
-          <td>スクリーンネーム</td>
-          <td><input name="screenName" type="text"></td>
-        </tr>
-        <tr>
-          <td>ログインネーム</td>
-          <td><input name="loginName" type="text"></td>
-        </tr>
-        <tr>
-          <td>パスワード</td>
-          <td><input name="password" type="password"></td>
-        </tr>
-        <tr>
-          <td></td>
-          <td><input type="submit" value="作成"></td>
-        </tr>
-      </table>
-    </form>
+    <section class="section">
+      <div class="container">
+        <form name="loginForm" action="#" method="POST" onsubmit="login();return false;">
+          <h2 class="title is-3">ログイン画面</h2>
+          <div class="field">
+            <div class="control">
+              <input name="loginName" class="input" type="text" placeholder="ログインネーム">
+            </div>
+          </div>
+          <div class="field">
+            <div class="control">
+              <input name="password" class="input" type="password" placeholder="パスワード">
+            </div>
+          </div>
+          <div class="field">
+            <div class="control">
+              <input type="submit" class="button" value="ログイン">
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="container">
+        <div class="whenLoggedOut">
+          <form name="createUserForm" action="#" method="POST" onsubmit="createUser();return false;">
+            <h2 class="title is-3">ユーザー作成画面</h2>
+            <div class="field">
+              <div class="control">
+                <input name="screenName" class="input" type="text" placeholder="スクリーンネーム">
+              </div>
+            </div>
+            <div class="field">
+              <div class="control">
+                <input name="loginName" class="input" type="text" placeholder="ログインネーム">
+              </div>
+            </div>
+            <div class="field">
+              <div class="control">
+                <input name="password" class="input" type="password" placeholder="パスワード">
+              </div>
+            </div>
+            <input type="submit" class="button" value="作成">
+          </form>
+        </div>
+      </div>
+    </section>
   </div>
   <div class="whenLoggedIn" style="display: none;">
-    ログイン中
-    <form name="logoutForm" acvtion="/" method="POST" onsubmit="return logout()">
-      <input type="submit" value="ログアウト">
-    </form>
-    <form name="postForm" acvtion="/" method="POST" onsubmit="return post()">
-      <input name="body" type="text">
-      <input type="submit" value="投稿">
-    </form>
-    <form name="getMessagesForm" acvtion="/" method="POST" onsubmit="return getMessages()">
-      <input type="submit" value="更新">
-    </form>
-    <hr>
-    <div id="messagesBox"></div>
-    <template id="messageTemplate">
-      <div class="message">
-        <span class="userScreenName"></span> :<span class="body"></span>
+    <section class="section">
+      <div class="container">
+        <div id="messagesBox"></div>
+        <template id="messageTemplate">
+          <div class="message">
+            <span class="userScreenName"></span> :<span class="body"></span>
+          </div>
+        </template>
       </div>
-    </template>
+      <hr>
+      <div class="container">
+        <form name="postForm" action="#" method="POST" onsubmit="post();return false;">
+          <input name="body" class="input" type="text">
+          <input type="submit" class="button is-light" value="投稿">
+        </form>
+        <form name="logoutForm" action="#" method="POST" onsubmit="logout();return false;">
+          <input type="submit" class="button is-light" value="ログアウト">
+        </form>
+        <!-- <form name="getMessagesForm" action="#" method="POST" onsubmit="getMessages();return false;">
+          <input type="submit" class="button is-light" value="更新"> -->
+        </form>
+      </div>
+    </section>
   </div>
 </body>
 </html>

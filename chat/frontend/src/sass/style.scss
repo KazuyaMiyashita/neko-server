@@ -1,0 +1,21 @@
+$red: #E71D36;
+$green: #2EC4B6;
+$ligth-green: #EFFFE9;
+$gray: #383A3F;
+$black: #011627;
+
+.header {
+  background: $gray;
+  h1 {
+    color: $red;
+  }
+}
+.whenLoggedOut{
+  // background: $ligth-green;
+  // input {
+  //   background: $green;
+  // }
+}
+.button {
+  background: $green;
+}

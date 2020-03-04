@@ -19,6 +19,7 @@ function changeIsLogin(_isLogin) {
   Array.prototype.forEach.call(whenLoggedOutInDivs, div => {
     console.log(div);
     div.style.display = isLogin ? "none" : "block";
+    document.getElementsByClassName("whenLoggedIn");
   });
   if (isLogin) {
     console.log("ログインしている");
