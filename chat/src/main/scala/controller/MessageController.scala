@@ -41,7 +41,7 @@ class MessageController(
     val result: Either[HttpResponse, HttpResponse] = for {
       user <- authenticator.auth(request)
       postRequest <- Json
-        .parse(request.body)
+        .parse(request.body.asString)
         .flatMap(postRequestDecoder.decode)
         .toRight(HttpResponse(BAD_REQUEST))
       newMessage = Message(UUID.randomUUID(), user.id, postRequest.body, clock.instant())

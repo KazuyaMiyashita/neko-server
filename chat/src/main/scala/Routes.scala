@@ -10,7 +10,14 @@ class Routes(routes: Route*) extends HttpApplication {
       .find(route => route.method == request.line.method && route.url.matches(request.line.uri))
       .map(_.handler)
 
-    handler.map(_.apply(request)).getOrElse(HttpResponse(NOT_FOUND))
+    try {
+      handler.map(_.apply(request)).getOrElse(HttpResponse(NOT_FOUND))
+    } catch {
+      case e: Throwable => {
+        e.printStackTrace()
+        HttpResponse(INTERNAL_SERVER_ERROR)
+      }
+    }
   }
 
 }

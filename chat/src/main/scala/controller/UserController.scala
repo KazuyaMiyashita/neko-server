@@ -25,7 +25,7 @@ class UserController(
   def create(request: HttpRequest): HttpResponse = {
     val result: Either[HttpResponse, HttpResponse] = for {
       userCreateRequest <- Json
-        .parse(request.body)
+        .parse(request.body.asString)
         .flatMap(userCreateRequestDecoder.decode)
         .toRight(HttpResponse(BAD_REQUEST))
       user <- userCreateService.create(userCreateRequest).runTx(dbPool.getConnection()).left.map {
