@@ -18,7 +18,7 @@ class AuthController(
   def login(request: HttpRequest): HttpResponse = {
     val result = for {
       a <- Json
-        .parse(request.body)
+        .parse(request.body.asString)
         .flatMap(loginRequestDecoder.decode)
         .toRight(HttpResponse(BAD_REQUEST, "リクエストの形式がおかしい"))
       LoginRequest(loginName, rawPassword) = a

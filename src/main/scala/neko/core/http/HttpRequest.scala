@@ -5,7 +5,7 @@ import java.io.{InputStream, BufferedInputStream}
 case class HttpRequest(
     line: HttpRequestLine,
     header: HttpRequestHeader,
-    body: String
+    body: HttpRequestBody
 ) {
 
   def asString: String = {
@@ -39,11 +39,11 @@ object HttpRequest {
     val line   = HttpRequestLine.fromString(firstHalf.head)
     val header = HttpRequestHeader.fromString(firstHalf.tail)
     val body = header.contentLength match {
-      case None => ""
+      case None => HttpRequestBody.empty
       case Some(length) => {
         val bytes = new Array[Byte](length)
         bin.read(bytes, 0, length)
-        new String(bytes, "UTF-8") // headerのcontentTypeを読む
+        HttpRequestBody.fromBytes(bytes)
       }
     }
     HttpRequest(line, header, body)
