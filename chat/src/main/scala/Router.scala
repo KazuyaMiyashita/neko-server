@@ -3,21 +3,13 @@ package neko.chat
 import scala.util.matching.Regex
 import neko.core.http._
 
-class Routes(routes: Route*) extends HttpApplication {
+case class Router(routes: Route*) {
 
-  override def handle(request: HttpRequest): HttpResponse = {
+  def handle(request: HttpRequest): Option[HttpResponse] = {
     val handler: Option[HttpRequest => HttpResponse] = routes
       .find(route => route.method == request.line.method && route.url.matches(request.line.uri))
       .map(_.handler)
-
-    try {
-      handler.map(_.apply(request)).getOrElse(HttpResponse(NOT_FOUND))
-    } catch {
-      case e: Throwable => {
-        e.printStackTrace()
-        HttpResponse(INTERNAL_SERVER_ERROR)
-      }
-    }
+    handler.map(_.apply(request))
   }
 
 }
