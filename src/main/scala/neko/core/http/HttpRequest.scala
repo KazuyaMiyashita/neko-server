@@ -9,7 +9,7 @@ case class HttpRequest(
 ) {
 
   def asString: String = {
-    List(line.asString, header.asString, "", body).mkString("\n")
+    List(line.asString, header.asString, "", body.asString).mkString("\n")
   }
 
 }
