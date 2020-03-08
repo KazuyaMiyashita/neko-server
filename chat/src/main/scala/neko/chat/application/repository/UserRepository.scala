@@ -2,7 +2,6 @@ package neko.chat.application.repository
 
 import neko.chat.application.entity.{User, Email, RawPassword, HashedPassword}
 import neko.chat.application.entity.User.{UserId, UserName}
-import java.util.UUID
 
 trait UserRepository {
 
@@ -12,9 +11,9 @@ trait UserRepository {
 
   def fetchUserIdBy(email: Email, hashedPassword: HashedPassword): Option[UserId]
 
-  def fetchBy(userId: UUID): Option[User]
+  def fetchBy(userId: UserId): Option[User]
 
-  def update(user: User): Unit
+  def updateUserName(userId: UserId, newUserName: UserName): Unit
 
 }
 

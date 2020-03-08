@@ -8,9 +8,10 @@ class GetMessages(messageRepository: MessageRepository) {
 
   import GetMessages._
 
-  def fetchLatest50messages(): List[MessageResponse] = {
-    messageRepository.fetchLatest50messages().map { case MessageRepository.MessageResponse(message, user) =>
-      MessageResponse(message.id, message.body, user.name, message.createdAt)
+  def latest50messages(): List[MessageResponse] = {
+    messageRepository.fetchLatest50messages().map {
+      case MessageRepository.MessageResponse(message, user) =>
+        MessageResponse(message.id, message.body, user.name, message.createdAt)
     }
   }
 
@@ -19,10 +20,10 @@ class GetMessages(messageRepository: MessageRepository) {
 object GetMessages {
 
   case class MessageResponse(
-    id: Message.MessageId,
-    body: Message.MessageBody,
-    userName: User.UserName,
-    createAt: Instant
+      id: Message.MessageId,
+      body: Message.MessageBody,
+      userName: User.UserName,
+      createdAt: Instant
   )
 
 }

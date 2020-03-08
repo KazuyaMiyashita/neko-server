@@ -11,7 +11,9 @@ case class User(
 
 object User {
 
-  case class UserId(value: UUID)
+  case class UserId(value: UUID) {
+    def asString: String = value.toString
+  }
   case class UserName(value: String)
   object UserName {
     def validate(name: String): Either[String, UserName] = {

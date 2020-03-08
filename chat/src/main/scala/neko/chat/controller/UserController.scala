@@ -1,41 +1,45 @@
 package neko.chat.controller
 
-import java.time.Clock
-
 import neko.core.http.{HttpRequest, HttpResponse}
-import neko.core.http.{OK, BAD_REQUEST, CONFLICT, INTERNAL_SERVER_ERROR}
-import neko.core.json.Json
-import neko.core.jdbc.DBPool
+import neko.core.http.{HttpStatus, OK, BAD_REQUEST, CONFLICT, UNAUTHORIZED}
+import neko.core.json.{Json, JsValue, JsonDecoder, JsonEncoder}
 
-import neko.chat.repository.AuthRepository.UserNotExistOrDuplicateUserNameException
-import neko.chat.service.CreateUserService
-import neko.chat.service.CreateUserService.CreateUserRequest
-import neko.chat.entity.User
-import neko.core.json.{JsonDecoder, JsonEncoder}
-import neko.core.json.JsValue
+import neko.chat.application.entity.Token
+import neko.chat.application.service.{FetchUserIdByToken, CreateUser, EditUserInfo}
+import neko.chat.application.service.CreateUser.{CreateUserRequest, DuplicateEmail}
+import neko.chat.application.service.EditUserInfo
 
 class UserController(
-    userCreateService: CreateUserService,
-    dbPool: DBPool,
-    clock: Clock
+    fetchUserIdByToken: FetchUserIdByToken,
+    createUser: CreateUser,
+    editUserInfo: EditUserInfo
 ) {
 
   import UserController._
 
   def create(request: HttpRequest): HttpResponse = {
     val result: Either[HttpResponse, HttpResponse] = for {
-      userCreateRequest <- Json
-        .parse(request.body.asString)
-        .flatMap(userCreateRequestDecoder.decode)
-        .toRight(HttpResponse(BAD_REQUEST))
-      user <- userCreateService.execute(userCreateRequest).runTx(dbPool.getConnection()).left.map {
-        case e: UserNotExistOrDuplicateUserNameException => HttpResponse(CONFLICT, "loginNameが既に使われています")
-        case _                                           => HttpResponse(INTERNAL_SERVER_ERROR)
+      createUserRequest <- parseJsonRequest(request, createUserRequestDecoder)
+      _ <- createUser.execute(createUserRequest).left.map {
+        case CreateUser.ValidateError(message) => HttpResponse(BAD_REQUEST, message)
+        case DuplicateEmail(_)                 => HttpResponse(CONFLICT, "メールアドレスが既に登録されています")
       }
-    } yield {
-      val jsonString = Json.format(userEncoder.encode(user))
-      HttpResponse(OK, jsonString).withContentType("application/json")
-    }
+    } yield HttpResponse(OK)
+    result.merge
+  }
+
+  def edit(request: HttpRequest): HttpResponse = {
+    val result: Either[HttpResponse, HttpResponse] = for {
+      token <- request.header.cookies
+        .get("token")
+        .map(Token.apply)
+        .toRight(HttpResponse(UNAUTHORIZED))
+      newUserName <- parseJsonRequest(request, nameDecoder)
+      userId      <- fetchUserIdByToken.execute(token).toRight(HttpResponse(UNAUTHORIZED))
+      _ <- editUserInfo.execute(userId, newUserName).left.map {
+        case EditUserInfo.ValidateError(message) => HttpResponse(BAD_REQUEST, message)
+      }
+    } yield HttpResponse(OK)
     result.merge
   }
 
@@ -43,11 +47,23 @@ class UserController(
 
 object UserController {
 
-  val userCreateRequestDecoder: JsonDecoder[CreateUserRequest] = new JsonDecoder[CreateUserRequest] {
+  def createJsonResponse[T](status: HttpStatus, result: T)(implicit encoder: JsonEncoder[T]): HttpResponse = {
+    HttpResponse(status, Json.format(Json.encode(result)))
+      .withContentType("application/json")
+  }
+
+  def parseJsonRequest[T](request: HttpRequest, decoder: JsonDecoder[T]): Either[HttpResponse, T] = {
+    Json
+      .parse(request.body.asString)
+      .flatMap(decoder.decode)
+      .toRight(HttpResponse(BAD_REQUEST))
+  }
+
+  val createUserRequestDecoder: JsonDecoder[CreateUserRequest] = new JsonDecoder[CreateUserRequest] {
     override def decode(js: JsValue): Option[CreateUserRequest] = {
       for {
         screenName  <- (js \ "screenName").as[String]
-        loginName   <- (js \ "loginName").as[String]
+        loginName   <- (js \ "email").as[String]
         rawPassword <- (js \ "password").as[String]
       } yield CreateUserRequest(screenName, loginName, rawPassword)
     }
@@ -57,13 +73,6 @@ object UserController {
     override def decode(js: JsValue): Option[String] = {
       (js \ "name").as[String]
     }
-  }
-
-  val userEncoder: JsonEncoder[User] = new JsonEncoder[User] {
-    override def encode(user: User): JsValue = Json.obj(
-      "id"          -> Json.str(user.id.toString),
-      "screen_name" -> Json.str(user.screenName)
-    )
   }
 
 }

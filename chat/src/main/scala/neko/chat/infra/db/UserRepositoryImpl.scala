@@ -13,22 +13,27 @@ import neko.core.jdbc.{ConnectionIO, DBPool}
 import neko.core.jdbc.query._
 
 import neko.chat.application.repository.UserRepository
-import neko.chat.application.entity.{User, Auth}
+import neko.chat.application.entity.{User, Email, RawPassword, HashedPassword}
+import neko.chat.application.entity.User.{UserId, UserName}
 
 class UserRepositoryImpl(
-  dbPool: DBPool,
-  clock: Clock,
-  applicationSecretSalt: String
+    dbPool: DBPool,
+    clock: Clock,
+    applicationSecretSalt: String
 ) extends UserRepository {
 
   import UserRepositoryImpl._
 
-  override def createNewUser(userName: UserName, email: Email, hashedPassword: HashedPassword): Either[Throwable, User] = {
-    val user           = User(UUID.randomUUID(), userName, clock.instant())
-    val auth           = Auth(email, hashedPassword, user.id)
+  override def createNewUser(
+      userName: UserName,
+      email: Email,
+      hashedPassword: HashedPassword
+  ): Either[Throwable, User] = {
+    val user = User(UUID.randomUUID(), userName, clock.instant())
+    val auth = Auth(email, hashedPassword, user.id)
     val io = for {
-    _ <- insertUserIO(user)
-    _ <- insertAuthIO(auth)
+      _ <- insertUserIO(user)
+      _ <- insertAuthIO(auth)
     } yield ()
     io.runTx(dbPool.getConnection())
     user
@@ -42,7 +47,7 @@ class UserRepositoryImpl(
       /* keyLength = */ 256 /* bytes */
     )
     val secretKey: SecretKey = secretKeyFactory.generateSecret(keySpec)
-    val value = Base64.getEncoder.encodeToString(secretKey.getEncoded)
+    val value                = Base64.getEncoder.encodeToString(secretKey.getEncoded)
     HashedPassword(value)
   }
 
@@ -83,7 +88,8 @@ object UserRepositoryImpl {
     try {
       pstmt.executeUpdate()
     } catch {
-      case e: SQLIntegrityConstraintViolationException => throw new UserRepository.UserNotExistOrDuplicateUserNameException(e)
+      case e: SQLIntegrityConstraintViolationException =>
+        throw new UserRepository.UserNotExistOrDuplicateUserNameException(e)
     }
     ()
   }

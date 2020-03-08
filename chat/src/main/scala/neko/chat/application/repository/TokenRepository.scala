@@ -11,4 +11,3 @@ trait TokenRepository {
   def fetchUserIdByToken(token: Token): Option[UserId]
 
 }
-

@@ -3,7 +3,6 @@ package neko.chat.application.service
 import neko.chat.application.entity.{Email, Token, RawPassword, HashedPassword}
 import neko.chat.application.repository.{UserRepository, TokenRepository}
 
-
 class Login(
     userRepository: UserRepository,
     tokenRepositoty: TokenRepository
@@ -22,14 +21,16 @@ class Login(
   }
 
   def execute(request: LoginRequest): Either[LoginError, Token] = {
-    validate(request).flatMap { case (email, hashedPassword) =>
-      userRepository.fetchUserIdBy(email, hashedPassword)
-        .toRight(UserNotExist)
-        .map { userId =>
-          val token = tokenRepositoty.createToken(userId)
-          tokenRepositoty.saveToken(userId, token)
-          token
-        }
+    validate(request).flatMap {
+      case (email, hashedPassword) =>
+        userRepository
+          .fetchUserIdBy(email, hashedPassword)
+          .toRight(UserNotExist)
+          .map { userId =>
+            val token = tokenRepositoty.createToken(userId)
+            tokenRepositoty.saveToken(userId, token)
+            token
+          }
     }
   }
 
@@ -38,13 +39,12 @@ class Login(
 object Login {
 
   case class LoginRequest(
-    email: String,
-    rawPassword: String
+      email: String,
+      rawPassword: String
   )
 
-  trait LoginError
+  sealed trait LoginError
   case class ValidateError(asString: String) extends LoginError
-  object UserNotExist extends LoginError
+  object UserNotExist                        extends LoginError
 
 }
-

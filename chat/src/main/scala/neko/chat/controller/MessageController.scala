@@ -1,53 +1,40 @@
 package neko.chat.controller
 
-import java.util.UUID
-import java.time.Clock
-
 import neko.core.http.{HttpRequest, HttpResponse}
-import neko.core.http.{OK, BAD_REQUEST, INTERNAL_SERVER_ERROR}
+import neko.core.http.{HttpStatus, OK, BAD_REQUEST, UNAUTHORIZED}
 import neko.core.json.Json
-import neko.core.jdbc.DBPool
 
-import neko.chat.auth.Authenticator
-import neko.chat.repository.MessageRepository
-import neko.chat.repository.MessageRepository.MessageResponse
-import neko.chat.entity.Message
 import neko.core.json.{JsonDecoder, JsonEncoder}
 import neko.core.json.JsValue
+import neko.core.http.HttpStatus
+
+import neko.chat.application.entity.Token
+import neko.chat.application.service.{FetchUserIdByToken, GetMessages, PostMessage}
+import neko.chat.application.service.GetMessages.MessageResponse
+import neko.chat.application.service.PostMessage.PostMessageRequest
 
 class MessageController(
-    messageRepository: MessageRepository,
-    authenticator: Authenticator,
-    dbPool: DBPool,
-    clock: Clock
+    fetchUserIdByToken: FetchUserIdByToken,
+    getMessages: GetMessages,
+    postMessage: PostMessage
 ) {
 
   import MessageController._
 
   def get(request: HttpRequest): HttpResponse = {
-    val result: Either[HttpResponse, HttpResponse] = for {
-      user <- authenticator.auth(request)
-      messages <- messageRepository.get().runReadOnly(dbPool.getConnection()).left.map { e =>
-        HttpResponse(INTERNAL_SERVER_ERROR)
-      }
-    } yield {
-      val jsonString = Json.format(postResponseEncoder.encode(messages))
-      HttpResponse(OK, jsonString).withContentType("application/json")
-    }
-    result.merge
+    val list: List[MessageResponse] = getMessages.latest50messages()
+    createJsonResponse(OK, list)
   }
 
   def post(request: HttpRequest): HttpResponse = {
     val result: Either[HttpResponse, HttpResponse] = for {
-      user <- authenticator.auth(request)
-      postRequest <- Json
-        .parse(request.body.asString)
-        .flatMap(postRequestDecoder.decode)
-        .toRight(HttpResponse(BAD_REQUEST))
-      newMessage = Message(UUID.randomUUID(), user.id, postRequest.body, clock.instant())
-      _ <- messageRepository.post(newMessage).runTx(dbPool.getConnection()).left.map { e =>
-        HttpResponse(INTERNAL_SERVER_ERROR)
-      }
+      postRequest <- parseJsonRequest(request, postRequestDecoder)
+      token <- request.header.cookies
+        .get("token")
+        .map(Token.apply)
+        .toRight(HttpResponse(UNAUTHORIZED))
+      userId <- fetchUserIdByToken.execute(token).toRight(HttpResponse(UNAUTHORIZED))
+      messages = postMessage.execute(PostMessageRequest(userId, postRequest.body))
     } yield {
       HttpResponse(OK).withContentType("application/json")
     }
@@ -58,20 +45,25 @@ class MessageController(
 
 object MessageController {
 
-  val postResponseEncoder: JsonEncoder[List[MessageResponse]] = {
-    val messageResponseEncoder: JsonEncoder[MessageResponse] = new JsonEncoder[MessageResponse] {
-      override def encode(value: MessageResponse): JsValue = Json.obj(
-        "id"                  -> Json.str(value.message.id.toString),
-        "body"                -> Json.str(value.message.body),
-        "userScreenName"      -> Json.str(value.user.screenName),
-        "createdAtEpochMilli" -> Json.num(value.message.createdAt.toEpochMilli)
-      )
-    }
+  def createJsonResponse[T](status: HttpStatus, result: T)(implicit encoder: JsonEncoder[T]): HttpResponse = {
+    HttpResponse(status, Json.format(Json.encode(result)))
+      .withContentType("application/json")
+  }
 
-    new JsonEncoder[List[MessageResponse]] {
-      override def encode(values: List[MessageResponse]): JsValue =
-        Json.arr(values.map(messageResponseEncoder.encode(_)): _*)
-    }
+  def parseJsonRequest[T](request: HttpRequest, decoder: JsonDecoder[T]): Either[HttpResponse, T] = {
+    Json
+      .parse(request.body.asString)
+      .flatMap(decoder.decode)
+      .toRight(HttpResponse(BAD_REQUEST))
+  }
+
+  implicit val messageResponseEncoder: JsonEncoder[MessageResponse] = new JsonEncoder[MessageResponse] {
+    override def encode(message: MessageResponse): JsValue = Json.obj(
+      "id"        -> Json.str(message.id.asString),
+      "body"      -> Json.str(message.body.value),
+      "userName"  -> Json.str(message.userName.value),
+      "createdAt" -> Json.num(message.createdAt.toEpochMilli)
+    )
   }
 
   case class PostRequest(body: String)

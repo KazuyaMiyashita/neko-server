@@ -1,39 +1,47 @@
 package neko.chat.controller
 
 import neko.core.http.{HttpRequest, HttpResponse}
-import neko.core.json.{Json, JsValue, JsonDecoder}
-import neko.chat.auth.Token
-import neko.chat.repository.AuthRepository
-import neko.core.http.BAD_REQUEST
-import neko.core.jdbc.DBPool
-import neko.core.http.{OK, UNAUTHORIZED, INTERNAL_SERVER_ERROR}
+import neko.core.json.{Json, JsValue, JsonDecoder, JsonEncoder}
+import neko.core.http.{HttpStatus, OK, BAD_REQUEST, UNAUTHORIZED}
+import neko.chat.application.entity.Token
+import neko.chat.application.entity.User.UserId
+import neko.chat.application.service.{FetchUserIdByToken, Login, Logout}
+import neko.chat.application.service.Login.{LoginRequest, ValidateError, UserNotExist}
 
 class AuthController(
-    authRepsoitory: AuthRepository,
-    dbPool: DBPool
+    fetchUserIdByToken: FetchUserIdByToken,
+    login: Login,
+    logout: Logout
 ) {
 
   import AuthController._
 
+  def session(request: HttpRequest): HttpResponse = {
+    val result = for {
+      token <- request.header.cookies
+        .get("token")
+        .map(Token.apply)
+        .toRight(HttpResponse(UNAUTHORIZED))
+      userId <- fetchUserIdByToken.execute(token).toRight(HttpResponse(UNAUTHORIZED))
+    } yield {
+      createJsonResponse(OK, SessionResponse(userId))
+    }
+    result.merge
+  }
+
   def login(request: HttpRequest): HttpResponse = {
     val result = for {
-      a <- Json
-        .parse(request.body.asString)
-        .flatMap(loginRequestDecoder.decode)
-        .toRight(HttpResponse(BAD_REQUEST, "リクエストの形式がおかしい"))
-      LoginRequest(loginName, rawPassword) = a
-      token <- authRepsoitory
-        .login(loginName, rawPassword)
-        .runTx(dbPool.getConnection())
-        .left
-        .map { e =>
-          println(e)
-          HttpResponse(INTERNAL_SERVER_ERROR)
-        }
-        .flatMap(_.toRight(HttpResponse(UNAUTHORIZED, "メールアドレスかパスワードが間違っている")))
+      token <- request.header.cookies
+        .get("token")
+        .map(Token.apply)
+        .toRight(HttpResponse(UNAUTHORIZED))
+      loginRequest <- parseJsonRequest(request, loginRequestDecoder)
+      token <- login.execute(loginRequest).left.map {
+        case ValidateError(message) => HttpResponse(BAD_REQUEST, message)
+        case UserNotExist           => HttpResponse(UNAUTHORIZED, "メールアドレスかパスワードが間違っている")
+      }
     } yield {
       HttpResponse(OK)
-        .withContentType("application/json")
         .withHeader("Set-Cookie", s"token=${token.value}; Path=/")
     }
     result.merge
@@ -44,38 +52,11 @@ class AuthController(
       token <- request.header.cookies
         .get("token")
         .map(Token.apply)
-        .toRight(HttpResponse(BAD_REQUEST, "token required"))
-      _ <- authRepsoitory
-        .logout(token)
-        .runTx(dbPool.getConnection())
-        .left
-        .map { e =>
-          println(e)
-          HttpResponse(INTERNAL_SERVER_ERROR)
-        }
-    } yield HttpResponse(OK)
-    result.merge
-  }
-
-  def session(request: HttpRequest): HttpResponse = {
-    val result = for {
-      token <- request.header.cookies
-        .get("token")
-        .map(Token.apply)
-        .toRight(HttpResponse(UNAUTHORIZED))
-      userOpt <- authRepsoitory
-        .authenticate(token)
-        .runTx(dbPool.getConnection())
-        .left
-        .map { e =>
-          println(e)
-          HttpResponse(INTERNAL_SERVER_ERROR)
-        }
+        .toRight(HttpResponse(OK))
     } yield {
-      userOpt match {
-        case None    => HttpResponse(UNAUTHORIZED)
-        case Some(_) => HttpResponse(OK)
-      }
+      logout.execute(token)
+      HttpResponse(OK)
+        .withHeader("Set-Cookie", "token=; Path=/; Max-Age=0")
     }
     result.merge
   }
@@ -84,13 +65,29 @@ class AuthController(
 
 object AuthController {
 
-  case class LoginRequest(loginName: String, rawPassword: String)
+  def createJsonResponse[T](status: HttpStatus, result: T)(implicit encoder: JsonEncoder[T]): HttpResponse = {
+    HttpResponse(status, Json.format(Json.encode(result)))
+      .withContentType("application/json")
+  }
+
+  def parseJsonRequest[T](request: HttpRequest, decoder: JsonDecoder[T]): Either[HttpResponse, T] = {
+    Json
+      .parse(request.body.asString)
+      .flatMap(decoder.decode)
+      .toRight(HttpResponse(BAD_REQUEST))
+  }
+
+  case class SessionResponse(userId: UserId)
+  implicit val sessionResponseEncoder: JsonEncoder[SessionResponse] = new JsonEncoder[SessionResponse] {
+    override def encode(value: SessionResponse): JsValue = Json.obj("userId" -> Json.str(value.userId.toString))
+  }
+
   val loginRequestDecoder: JsonDecoder[LoginRequest] = new JsonDecoder[LoginRequest] {
     override def decode(js: JsValue): Option[LoginRequest] = {
       for {
-        loginName   <- (js \ "loginName").as[String]
+        email       <- (js \ "email").as[String]
         rawPassword <- (js \ "password").as[String]
-      } yield LoginRequest(loginName, rawPassword)
+      } yield LoginRequest(email, rawPassword)
     }
   }
 

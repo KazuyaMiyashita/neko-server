@@ -11,15 +11,17 @@ class PostMessage(messageRepository: MessageRepository) {
 
   def validate(request: PostMessageRequest): Either[ValidateError, (UserId, MessageBody)] = {
     val e: Either[String, MessageBody] = MessageBody.validate(request.body)
-    e.left.map(ValidateError.apply)
-    .map(body => (request.userId, body))
+    e.left
+      .map(ValidateError.apply)
+      .map(body => (request.userId, body))
   }
 
   def execute(request: PostMessageRequest): Either[PostMessageError, Message] = {
-    validate(request).map { case (userId, messageBody) =>
-      val message = messageRepository.createMessageEntity(userId, messageBody)
-      messageRepository.saveMessage(message)
-      message
+    validate(request).map {
+      case (userId, messageBody) =>
+        val message = messageRepository.createMessageEntity(userId, messageBody)
+        messageRepository.saveMessage(message)
+        message
     }
   }
 

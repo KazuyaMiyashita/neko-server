@@ -10,10 +10,11 @@ case class Message(
     createdAt: Instant
 )
 
-
 object Message {
 
-  case class MessageId(value: UUID)
+  case class MessageId(value: UUID) {
+    def asString: String = value.toString
+  }
   case class MessageBody(value: String)
   object MessageBody {
     def validate(body: String): Either[String, MessageBody] = {
