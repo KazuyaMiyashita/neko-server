@@ -5,12 +5,18 @@ import neko.core.http._
 import java.time.Clock
 import neko.core.jdbc.DBPool
 import java.sql.{DriverManager, Connection}
-import neko.chat.repository.{AuthRepository, AuthRepositoryImpl}
-import neko.chat.repository.{UserRepository, UserRepositoryImpl}
-import neko.chat.repository.{MessageRepository, MessageRepositoryImpl}
-import neko.chat.auth.{Authenticator, AuthenticatorImpl}
+import neko.chat.application.repository.{MessageRepository, TokenRepository, UserRepository}
+import neko.chat.application.service.{
+  CreateUser,
+  EditUserInfo,
+  FetchUserIdByToken,
+  GetMessages,
+  Login,
+  Logout,
+  PostMessage
+}
+import neko.chat.infra.db.{MessageRepositoryImpl, TokenRepositoryImpl, UserRepositoryImpl}
 import neko.chat.controller.{AuthController, UserController, MessageController}
-import neko.chat.service.CreateUserService
 
 object Main extends App {
 
@@ -26,26 +32,22 @@ object Main extends App {
       )
     }
   }
-  val authRepository: AuthRepository       = new AuthRepositoryImpl(clock)
-  val userRepository: UserRepository       = new UserRepositoryImpl
-  val messageRepository: MessageRepository = new MessageRepositoryImpl
-  val userCreateService                    = new CreateUserService(userRepository, authRepository, clock)
-  val authenticator: Authenticator         = new AuthenticatorImpl(authRepository, dbPool)
-  val authController = new AuthController(
-    authRepository,
-    dbPool
-  )
-  val userController = new UserController(
-    userCreateService,
-    dbPool,
-    clock
-  )
-  val messageController = new MessageController(
-    messageRepository,
-    authenticator,
-    dbPool,
-    clock
-  )
+
+  val messageRepository: MessageRepository = new MessageRepositoryImpl(dbPool, clock)
+  val tokenRepository: TokenRepository     = new TokenRepositoryImpl(dbPool, clock, config.applicationSecret)
+  val userRepository: UserRepository       = new UserRepositoryImpl(dbPool, clock, config.applicationSecret)
+
+  val createUser         = new CreateUser(userRepository)
+  val editUserInfo       = new EditUserInfo(userRepository)
+  val fetchUserIdByToken = new FetchUserIdByToken(tokenRepository)
+  val getMessages        = new GetMessages(messageRepository)
+  val login              = new Login(userRepository, tokenRepository)
+  val logout             = new Logout(tokenRepository)
+  val postMessage        = new PostMessage(messageRepository)
+
+  val authController    = new AuthController(fetchUserIdByToken, login, logout)
+  val messageController = new MessageController(fetchUserIdByToken, getMessages, postMessage)
+  val userController    = new UserController(fetchUserIdByToken, createUser, editUserInfo)
 
   val application: HttpApplication   = new ChatApplication(userController, authController, messageController)
   val requestHandler: RequestHandler = new HttpRequestHandler(application)

@@ -1,9 +1,9 @@
 package neko.chat.application.entity
 
-import java.util.UUID
+import neko.chat.application.entity.User.UserId
 
 case class Auth(
     email: Email,
     hashedPassword: HashedPassword,
-    userId: UUID
+    userId: UserId
 )

@@ -1,12 +1,16 @@
 package neko.chat
 
 case class Config(
-    db: DBConfig
+    db: DBConfig,
+    applicationSecret: String
 )
 
 object Config {
   def fromEnv() = Config(
-    db = DBConfig.fromEnv()
+    db = DBConfig.fromEnv(),
+    applicationSecret = sys.env
+      .get("APPLICATION_SECRET")
+      .getOrElse(throw new RuntimeException("system environment APPLICATION_SECRET is required"))
   )
 }
 
