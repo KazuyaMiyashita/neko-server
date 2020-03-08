@@ -10,7 +10,7 @@ import neko.chat.repository.{UserRepository, UserRepositoryImpl}
 import neko.chat.repository.{MessageRepository, MessageRepositoryImpl}
 import neko.chat.auth.{Authenticator, AuthenticatorImpl}
 import neko.chat.controller.{AuthController, UserController, MessageController}
-import neko.chat.service.UserCreateService
+import neko.chat.service.CreateUserService
 
 object Main extends App {
 
@@ -29,7 +29,7 @@ object Main extends App {
   val authRepository: AuthRepository       = new AuthRepositoryImpl(clock)
   val userRepository: UserRepository       = new UserRepositoryImpl
   val messageRepository: MessageRepository = new MessageRepositoryImpl
-  val userCreateService                    = new UserCreateService(userRepository, authRepository, clock)
+  val userCreateService                    = new CreateUserService(userRepository, authRepository, clock)
   val authenticator: Authenticator         = new AuthenticatorImpl(authRepository, dbPool)
   val authController = new AuthController(
     authRepository,

@@ -1,4 +1,4 @@
-package neko.chat.auth
+package neko.chat.application.entity
 
 import util.Random
 

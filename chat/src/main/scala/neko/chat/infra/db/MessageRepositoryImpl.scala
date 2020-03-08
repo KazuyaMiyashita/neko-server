@@ -1,4 +1,4 @@
-package neko.chat.repository
+package neko.chat.infra.db
 
 import java.util.UUID
 import java.sql.{ResultSet, Timestamp}

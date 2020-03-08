@@ -1,4 +1,4 @@
-package neko.chat.repository
+package neko.chat.application.repository
 
 import java.util.UUID
 import java.time.Clock

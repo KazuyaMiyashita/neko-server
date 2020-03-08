@@ -8,14 +8,14 @@ import neko.core.json.Json
 import neko.core.jdbc.DBPool
 
 import neko.chat.repository.AuthRepository.UserNotExistOrDuplicateUserNameException
-import neko.chat.service.UserCreateService
-import neko.chat.service.UserCreateService.UserCreateRequest
+import neko.chat.service.CreateUserService
+import neko.chat.service.CreateUserService.CreateUserRequest
 import neko.chat.entity.User
 import neko.core.json.{JsonDecoder, JsonEncoder}
 import neko.core.json.JsValue
 
 class UserController(
-    userCreateService: UserCreateService,
+    userCreateService: CreateUserService,
     dbPool: DBPool,
     clock: Clock
 ) {
@@ -28,7 +28,7 @@ class UserController(
         .parse(request.body.asString)
         .flatMap(userCreateRequestDecoder.decode)
         .toRight(HttpResponse(BAD_REQUEST))
-      user <- userCreateService.create(userCreateRequest).runTx(dbPool.getConnection()).left.map {
+      user <- userCreateService.execute(userCreateRequest).runTx(dbPool.getConnection()).left.map {
         case e: UserNotExistOrDuplicateUserNameException => HttpResponse(CONFLICT, "loginNameが既に使われています")
         case _                                           => HttpResponse(INTERNAL_SERVER_ERROR)
       }
@@ -43,13 +43,13 @@ class UserController(
 
 object UserController {
 
-  val userCreateRequestDecoder: JsonDecoder[UserCreateRequest] = new JsonDecoder[UserCreateRequest] {
-    override def decode(js: JsValue): Option[UserCreateRequest] = {
+  val userCreateRequestDecoder: JsonDecoder[CreateUserRequest] = new JsonDecoder[CreateUserRequest] {
+    override def decode(js: JsValue): Option[CreateUserRequest] = {
       for {
         screenName  <- (js \ "screenName").as[String]
         loginName   <- (js \ "loginName").as[String]
         rawPassword <- (js \ "password").as[String]
-      } yield UserCreateRequest(screenName, loginName, rawPassword)
+      } yield CreateUserRequest(screenName, loginName, rawPassword)
     }
   }
 
