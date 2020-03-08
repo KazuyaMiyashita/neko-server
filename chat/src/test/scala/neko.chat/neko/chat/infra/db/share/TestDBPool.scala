@@ -1,4 +1,4 @@
-package neko.chat.repository.share
+package neko.chat.infra.db.share
 
 import java.sql.{Connection, DriverManager}
 import neko.core.jdbc.DBPool
