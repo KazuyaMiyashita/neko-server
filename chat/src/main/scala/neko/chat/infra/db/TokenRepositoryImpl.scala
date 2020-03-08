@@ -94,10 +94,10 @@ object TokenRepositoryImpl {
   }
 
   def fetchUserIdByTokenIO(token: Token): ConnectionIO[Option[UserId]] = ConnectionIO { conn =>
-    val query = "select * from tokens where token = ?;"
+    val query = "select user_id from tokens where token = ?;"
     val pstmt = conn.prepareStatement(query)
     pstmt.setString(1, token.value)
-    val mapping: ResultSet => UserId = row => UserId(UUID.fromString(row.getString("token")))
+    val mapping: ResultSet => UserId = row => UserId(UUID.fromString(row.getString("user_id")))
     select(pstmt, mapping)(conn)
   }
 

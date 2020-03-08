@@ -1,17 +1,17 @@
 package neko.chat.infra.db
 
 import java.util.UUID
-import java.time.{Clock, Instant, ZoneId}
+import java.time.Instant
+import java.sql.SQLIntegrityConstraintViolationException
 
-import neko.chat.application.entity.User.UserId
-import neko.chat.application.entity.Token
+import neko.core.jdbc.ConnectionIO
+import neko.chat.application.entity.User.{UserId, UserName}
+import neko.chat.application.entity.{User, Token}
 
 import neko.chat.infra.db.share.TestDBPool
 import org.scalatest._
 
 class TokenRepositoryImplSpec extends FunSuite with Matchers {
-
-  val clock = Clock.fixed(Instant.parse("2020-01-01T10:00:00.000Z"), ZoneId.of("Z"))
 
   def conn() = TestDBPool.getConnection()
 
@@ -56,6 +56,118 @@ class TokenRepositoryImplSpec extends FunSuite with Matchers {
     val token2 = TokenRepositoryImpl._createToken(userId, now, salt2)
 
     token1 should not equal token2
+  }
+
+  test("usersに該当のidが存在する時、tokenをDBに追加できる") {
+    val userId = UserId(UUID.fromString("53247465-de8c-47e8-ae01-d46d04db5dc2"))
+    val now    = Instant.parse("2020-01-01T10:00:00.000Z")
+    val user   = User(userId, UserName("Foo"), now)
+
+    val salt  = "dummy-salt-dummy-salt"
+    val token = TokenRepositoryImpl._createToken(userId, now.toEpochMilli, salt)
+
+    val io: ConnectionIO[Unit] = for {
+      _ <- UserRepositoryImpl.insertUserIO(user)
+      _ <- TokenRepositoryImpl.insertTokenIO(userId, token, now)
+    } yield ()
+    val result: Either[Throwable, Unit] = io.runRollback(conn())
+
+    result shouldEqual Right(())
+  }
+
+  test("usersに該当のidが存在しない時は、tokenはDBに追加できない") {
+    val userId = UserId(UUID.fromString("53247465-de8c-47e8-ae01-d46d04db5dc2"))
+    val now    = Instant.parse("2020-01-01T10:00:00.000Z")
+
+    val salt  = "dummy-salt-dummy-salt"
+    val token = TokenRepositoryImpl._createToken(userId, now.toEpochMilli, salt)
+
+    val io: ConnectionIO[Unit] = for {
+      _ <- TokenRepositoryImpl.insertTokenIO(userId, token, now)
+    } yield ()
+    val result: Either[Throwable, Unit] = io.runRollback(conn())
+
+    assertThrows[SQLIntegrityConstraintViolationException] {
+      result.left.map { e: Throwable =>
+        throw e
+      }
+    }
+  }
+
+  test("tokenから特定のUserIdを取得できる") {
+    val userIds = List(
+      UserId(UUID.fromString("53247465-de8c-47e8-ae01-d46d04db5dc2")),
+      UserId(UUID.fromString("64c9fa7e-93f9-483d-9508-25e582736882")),
+      UserId(UUID.fromString("1f7c110f-2ef7-4f81-b99f-04f54f4b3f7e")),
+      UserId(UUID.fromString("dfce2026-5e2e-42a3-a41e-0b9bc68927d1")),
+      UserId(UUID.fromString("9a602bf7-611a-41c2-9e5f-aa3805d06fdc"))
+    )
+    val now   = Instant.parse("2020-01-01T10:00:00.000Z")
+    val users = userIds.map(userId => User(userId, UserName("Foo"), now))
+
+    val salt   = "dummy-salt-dummy-salt"
+    val tokens = users.map(user => TokenRepositoryImpl._createToken(user.id, now.toEpochMilli, salt))
+
+    val targetUserId = userIds(3)
+    val targetToken  = tokens(3)
+
+    val io: ConnectionIO[Option[UserId]] = for {
+      _ <- ConnectionIO.sequence(users.map(user => UserRepositoryImpl.insertUserIO(user)))
+      _ <- ConnectionIO.sequence {
+        (users zip tokens).map {
+          case (user, token) =>
+            TokenRepositoryImpl.insertTokenIO(user.id, token, now)
+        }
+      }
+      userId <- TokenRepositoryImpl.fetchUserIdByTokenIO(targetToken)
+    } yield userId
+
+    val result: Either[Throwable, Option[UserId]] = io.runRollback(conn())
+
+    result shouldEqual Right(Some(targetUserId))
+  }
+
+  test("指定したtokenのみ削除できる") {
+    val userIds = List(
+      UserId(UUID.fromString("53247465-de8c-47e8-ae01-d46d04db5dc2")),
+      UserId(UUID.fromString("64c9fa7e-93f9-483d-9508-25e582736882")),
+      UserId(UUID.fromString("1f7c110f-2ef7-4f81-b99f-04f54f4b3f7e")),
+      UserId(UUID.fromString("dfce2026-5e2e-42a3-a41e-0b9bc68927d1")),
+      UserId(UUID.fromString("9a602bf7-611a-41c2-9e5f-aa3805d06fdc"))
+    )
+    val now   = Instant.parse("2020-01-01T10:00:00.000Z")
+    val users = userIds.map(userId => User(userId, UserName("Foo"), now))
+
+    val salt   = "dummy-salt-dummy-salt"
+    val tokens = users.map(user => TokenRepositoryImpl._createToken(user.id, now.toEpochMilli, salt))
+
+    val targetUserId = userIds(3)
+    val targetToken  = tokens(3)
+
+    val io: ConnectionIO[(List[Option[UserId]], Boolean, List[Option[UserId]])] = for {
+      _ <- ConnectionIO.sequence(users.map(user => UserRepositoryImpl.insertUserIO(user)))
+      _ <- ConnectionIO.sequence {
+        (users zip tokens).map {
+          case (user, token) =>
+            TokenRepositoryImpl.insertTokenIO(user.id, token, now)
+        }
+      }
+      before    <- ConnectionIO.sequence(tokens.map(token => TokenRepositoryImpl.fetchUserIdByTokenIO(token)))
+      isDeleted <- TokenRepositoryImpl.deleteTokenIO(targetToken)
+      after     <- ConnectionIO.sequence(tokens.map(token => TokenRepositoryImpl.fetchUserIdByTokenIO(token)))
+    } yield (before.toList, isDeleted, after.toList)
+
+    val result: Either[Throwable, (List[Option[UserId]], Boolean, List[Option[UserId]])] = io.runRollback(conn())
+    val (before, isDeleted, after) = result.left.map { e: Throwable =>
+      throw e
+    }.merge
+
+    before shouldEqual userIds.map(Some(_))
+    isDeleted shouldEqual true
+    after shouldEqual userIds.map {
+      case `targetUserId` => None
+      case x              => Some(x)
+    }
   }
 
 }

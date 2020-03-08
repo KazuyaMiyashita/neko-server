@@ -111,9 +111,9 @@ object UserRepositoryImpl {
 
   def insertUserIO(user: User): ConnectionIO[Unit] = ConnectionIO { conn =>
     val query =
-      """insert into users(id, screen_name, created_at) values (?, ?, ?);"""
+      """insert into users(id, name, created_at) values (?, ?, ?);"""
     val stmt = conn.prepareStatement(query)
-    stmt.setString(1, user.id.toString)
+    stmt.setString(1, user.id.asString)
     stmt.setString(2, user.name.value)
     stmt.setTimestamp(3, Timestamp.from(user.createdAt))
     stmt.executeUpdate()
