@@ -3,17 +3,19 @@ package neko.chat.controller
 import java.util.UUID
 import java.time.Instant
 
-import neko.chat.application.service.{CreateUser, FetchUserIdByToken, EditUserInfo}
-import neko.chat.application.service.CreateUser.CreateUserRequest
+import neko.core.http.{HttpRequest, HttpRequestLine, HttpMethod, HttpRequestHeader, HttpRequestBody, OK}
+import neko.core.http.{POST, PUT}
+
 import neko.chat.application.entity.{User, Token}
 import neko.chat.application.entity.User.{UserId, UserName}
 
-import org.scalatest._
+import neko.chat.application.service.FetchUserIdByToken
+import neko.chat.application.service.{CreateUser, FetchUserIdByToken, EditUserInfo}
+import neko.chat.application.service.CreateUser.CreateUserRequest
 
 import neko.chat.ChatApplication
-import neko.core.http.{HttpRequest, HttpRequestLine, HttpMethod, HttpRequestHeader, HttpRequestBody, HttpResponse, OK}
-import neko.core.http.{POST, PUT}
-import neko.chat.application.service.FetchUserIdByToken
+
+import org.scalatest._
 
 class UserControllerSpec extends FlatSpec with Matchers {
 
@@ -31,15 +33,20 @@ class UserControllerSpec extends FlatSpec with Matchers {
       messageController = null
     )
 
-    val request = buildJsonRequest(POST, "/users")()("""{
-        |  "name": "Foo",
-        |  "email": "foo@example.com",
-        |  "password": "abcde123"
-        |}""".stripMargin)
+    val request = buildJsonRequest(
+      method = POST,
+      url = "/users",
+      headers = Nil,
+      body = """{
+               |  "name": "Foo",
+               |  "email": "foo@example.com",
+               |  "password": "abcde123"
+               |}""".stripMargin
+    )
 
-    val exceptResponse = HttpResponse(OK)
+    val response = chatApplication.handle(request)
 
-    chatApplication.handle(request) shouldEqual exceptResponse
+    response.status shouldEqual OK
   }
 
   "POST /edit" should "200" in {
@@ -64,26 +71,29 @@ class UserControllerSpec extends FlatSpec with Matchers {
       messageController = null
     )
 
-    val request = buildJsonRequest(PUT, "/users")(
-      "Cookie: token=dummy-token-dummy-token"
-    )("""{
-        |  "name": "Bar"
-        |}""".stripMargin)
+    val request = buildJsonRequest(
+      method = PUT,
+      url = "/users",
+      headers = "Cookie: token=dummy-token-dummy-token" :: Nil,
+      body = """{
+                |  "name": "Bar"
+                |}""".stripMargin
+    )
 
-    val exceptResponse = HttpResponse(OK)
+    val response = chatApplication.handle(request)
 
-    chatApplication.handle(request) shouldEqual exceptResponse
+    response.status shouldEqual OK
   }
 
 }
 
 object UserControllerSpec {
 
-  def buildJsonRequest(method: HttpMethod, url: String)(headers: String*)(body: String): HttpRequest = {
+  def buildJsonRequest(method: HttpMethod, url: String, headers: List[String], body: String): HttpRequest = {
     val contentLength = body.getBytes.length
     HttpRequest(
       HttpRequestLine(method, url, "HTTP/1.1"),
-      HttpRequestHeader(s"Content-Length: $contentLength" +: headers),
+      HttpRequestHeader(s"Content-Length: $contentLength" :: headers),
       HttpRequestBody(Some(body.getBytes))
     )
   }

@@ -32,10 +32,15 @@ class AuthControllerSpec extends FlatSpec with Matchers {
       messageController = null
     )
 
-    val request = buildJsonRequest(POST, "/auth/login")()("""{
-        |  "email": "foo@example.com",
-        |  "password": "abcde123"
-        |}""".stripMargin)
+    val request = buildJsonRequest(
+      method = POST,
+      url = "/auth/login",
+      headers = Nil,
+      body = """{
+               |  "email": "foo@example.com",
+               |  "password": "abcde123"
+               |}""".stripMargin
+    )
 
     val response = chatApplication.handle(request)
 
@@ -58,7 +63,12 @@ class AuthControllerSpec extends FlatSpec with Matchers {
       messageController = null
     )
 
-    val request = buildJsonRequest(POST, "/auth/logout")("Cookie: token=dummy-token-dummy-token")("")
+    val request = buildJsonRequest(
+      method = POST,
+      url = "/auth/logout",
+      headers = "Cookie: token=dummy-token-dummy-token" :: Nil,
+      body = ""
+    )
 
     val response = chatApplication.handle(request)
 
@@ -83,25 +93,31 @@ class AuthControllerSpec extends FlatSpec with Matchers {
       messageController = null
     )
 
-    val request = buildJsonRequest(GET, "/auth/session")("Cookie: token=dummy-token-dummy-token")("")
+    val request = buildJsonRequest(
+      method = GET,
+      url = "/auth/session",
+      headers = "Cookie: token=dummy-token-dummy-token" :: Nil,
+      body = ""
+    )
 
     val response = chatApplication.handle(request)
 
     response.status shouldEqual OK
-    response.body.get shouldEqual """{
-      |  "userId": "53247465-de8c-47e8-ae01-d46d04db5dc2"
-      |}""".stripMargin
+    response.body.get shouldEqual
+      """{
+        |  "userId": "53247465-de8c-47e8-ae01-d46d04db5dc2"
+        |}""".stripMargin
   }
 
 }
 
 object AuthControllerSpec {
 
-  def buildJsonRequest(method: HttpMethod, url: String)(headers: String*)(body: String): HttpRequest = {
+  def buildJsonRequest(method: HttpMethod, url: String, headers: List[String], body: String): HttpRequest = {
     val contentLength = body.getBytes.length
     HttpRequest(
       HttpRequestLine(method, url, "HTTP/1.1"),
-      HttpRequestHeader(s"Content-Length: $contentLength" +: headers),
+      HttpRequestHeader(s"Content-Length: $contentLength" :: headers),
       HttpRequestBody(Some(body.getBytes))
     )
   }

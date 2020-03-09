@@ -5,7 +5,18 @@ import neko.chat.application.entity.Message
 import neko.chat.application.entity.Message.MessageBody
 import neko.chat.application.repository.MessageRepository
 
-class PostMessage(messageRepository: MessageRepository) {
+trait PostMessage {
+  import PostMessage._
+  def execute(request: PostMessageRequest): Either[PostMessageError, Message]
+}
+
+object PostMessage {
+  case class PostMessageRequest(userId: UserId, body: String)
+  trait PostMessageError
+  case class ValidateError(asString: String) extends PostMessageError
+}
+
+class PostMessageImpl(messageRepository: MessageRepository) extends PostMessage {
 
   import PostMessage._
 
@@ -24,14 +35,5 @@ class PostMessage(messageRepository: MessageRepository) {
         message
     }
   }
-
-}
-
-object PostMessage {
-
-  case class PostMessageRequest(userId: UserId, body: String)
-
-  trait PostMessageError
-  case class ValidateError(asString: String) extends PostMessageError
 
 }
