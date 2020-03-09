@@ -58,8 +58,8 @@ globalThis.createUser = function () {
   var json = null;
   try {
     json = JSON.stringify({
-      screenName: document.createUserForm.screenName.value,
-      loginName: document.createUserForm.loginName.value,
+      name: document.createUserForm.screenName.value,
+      email: document.createUserForm.loginName.value,
       password: document.createUserForm.password.value
     });
   } catch {
@@ -94,7 +94,7 @@ globalThis.login = function () {
   var json = null;
   try {
     json = JSON.stringify({
-      loginName: document.loginForm.loginName.value,
+      email: document.loginForm.loginName.value,
       password: document.loginForm.password.value
     });
   } catch {
