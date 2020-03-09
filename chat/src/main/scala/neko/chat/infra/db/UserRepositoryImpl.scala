@@ -83,7 +83,7 @@ object UserRepositoryImpl {
       rawPassword.value.toCharArray,
       applicationSecret.getBytes,
       /* iterationCount = */ 10000,
-      /* keyLength = */ 256 /* bytes */
+      /* keyLength = */ 512 /* bytes */
     )
     val secretKey: SecretKey = secretKeyFactory.generateSecret(keySpec)
     val value                = Base64.getEncoder.encodeToString(secretKey.getEncoded)
@@ -142,8 +142,8 @@ object UserRepositoryImpl {
   def updateUserNameIO(userId: UserId, newUserName: UserName): ConnectionIO[Unit] = ConnectionIO { conn =>
     val query = "update users set name = ? where id = ?;"
     val pstmt = conn.prepareStatement(query)
-    pstmt.setString(1, userId.asString)
-    pstmt.setString(2, newUserName.value)
+    pstmt.setString(1, newUserName.value)
+    pstmt.setString(2, userId.asString)
     val rows = pstmt.executeUpdate()
     if (rows != 1) throw new RuntimeException
     ()
