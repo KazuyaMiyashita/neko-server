@@ -1,6 +1,8 @@
 package neko.chat.application.entity
 
-case class RawPassword(value: String)
+case class RawPassword(value: String) {
+  require(value.length >= 8)
+}
 
 object RawPassword {
   def validate(value: String): Either[String, RawPassword] = {

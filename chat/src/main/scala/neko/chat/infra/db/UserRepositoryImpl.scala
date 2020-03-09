@@ -39,15 +39,7 @@ class UserRepositoryImpl(
   }
 
   override def createHashedPassword(rawPassword: RawPassword): HashedPassword = {
-    val keySpec = new PBEKeySpec(
-      rawPassword.value.toCharArray,
-      applicationSecret.getBytes,
-      /* iterationCount = */ 10000,
-      /* keyLength = */ 256 /* bytes */
-    )
-    val secretKey: SecretKey = secretKeyFactory.generateSecret(keySpec)
-    val value                = Base64.getEncoder.encodeToString(secretKey.getEncoded)
-    HashedPassword(value)
+    _createHashedPassword(rawPassword, applicationSecret)
   }
 
   override def fetchUserIdBy(email: Email, hashedPassword: HashedPassword): Option[UserId] = {
@@ -86,16 +78,28 @@ object UserRepositoryImpl {
 
   val secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
 
+  def _createHashedPassword(rawPassword: RawPassword, applicationSecret: String): HashedPassword = {
+    val keySpec = new PBEKeySpec(
+      rawPassword.value.toCharArray,
+      applicationSecret.getBytes,
+      /* iterationCount = */ 10000,
+      /* keyLength = */ 256 /* bytes */
+    )
+    val secretKey: SecretKey = secretKeyFactory.generateSecret(keySpec)
+    val value                = Base64.getEncoder.encodeToString(secretKey.getEncoded)
+    HashedPassword(value)
+  }
+
   def selectUserIO(userId: UserId): ConnectionIO[Option[User]] = ConnectionIO { conn =>
     val query = """select * from users where id = ?;"""
     val mapping: ResultSet => User = row =>
       User(
         id = UserId(UUID.fromString(row.getString("id"))),
-        name = UserName(row.getString("user_name")),
+        name = UserName(row.getString("name")),
         createdAt = row.getTimestamp("created_at").toInstant
       )
     val stmt = conn.prepareStatement(query)
-    stmt.setString(1, userId.toString)
+    stmt.setString(1, userId.asString)
     select(stmt, mapping)(conn)
   }
 
@@ -125,7 +129,7 @@ object UserRepositoryImpl {
     val pstmt = conn.prepareStatement(query)
     pstmt.setString(1, auth.email.value)
     pstmt.setString(2, auth.hashedPassword.value)
-    pstmt.setString(3, auth.userId.toString)
+    pstmt.setString(3, auth.userId.asString)
     try {
       pstmt.executeUpdate()
     } catch {
