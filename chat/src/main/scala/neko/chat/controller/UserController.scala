@@ -62,10 +62,10 @@ object UserController {
   val createUserRequestDecoder: JsonDecoder[CreateUserRequest] = new JsonDecoder[CreateUserRequest] {
     override def decode(js: JsValue): Option[CreateUserRequest] = {
       for {
-        screenName  <- (js \ "screenName").as[String]
+        name        <- (js \ "name").as[String]
         loginName   <- (js \ "email").as[String]
         rawPassword <- (js \ "password").as[String]
-      } yield CreateUserRequest(screenName, loginName, rawPassword)
+      } yield CreateUserRequest(name, loginName, rawPassword)
     }
   }
 

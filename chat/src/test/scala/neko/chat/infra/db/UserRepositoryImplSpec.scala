@@ -6,6 +6,7 @@ import java.time.Instant
 import neko.core.jdbc.ConnectionIO
 import neko.chat.application.entity.User.{UserId, UserName}
 import neko.chat.application.entity.{User, RawPassword, HashedPassword, Email, Auth}
+import neko.chat.application.repository.UserRepository.UserNotExistOrDuplicateUserNameException
 
 import neko.chat.infra.db.share.TestDBPool
 import org.scalatest._
@@ -97,6 +98,25 @@ class UserRepositoryImplSpec extends FunSuite with Matchers {
     val result = io.runRollback(conn())
 
     result shouldEqual Right(Some(userId))
+  }
+
+  test("authsのemailは重複できない") {
+    val email = Email("dummy@example.com")
+    val user1 = User(UserId(UUID.randomUUID()), UserName("Foo"), Instant.parse("2020-01-01T10:00:00.000Z"))
+    val auth1 = Auth(email, HashedPassword("dummy-dummy-dummy"), user1.id)
+    val user2 = User(UserId(UUID.randomUUID()), UserName("Bar"), Instant.parse("2020-01-01T10:00:00.000Z"))
+    val auth2 = Auth(email, HashedPassword("dummy-dummy-dummy"), user2.id)
+
+    val io: ConnectionIO[Unit] = for {
+      _ <- UserRepositoryImpl.insertUserIO(user1)
+      _ <- UserRepositoryImpl.insertAuthIO(auth1)
+      _ <- UserRepositoryImpl.insertUserIO(user2)
+      _ <- UserRepositoryImpl.insertAuthIO(auth2)
+    } yield ()
+
+    val result = io.runRollback(conn())
+
+    assert(result.swap.getOrElse(throw new Exception).isInstanceOf[UserNotExistOrDuplicateUserNameException])
   }
 
   test("特定のuserのnameを変更出来る") {

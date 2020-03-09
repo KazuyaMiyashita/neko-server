@@ -4,9 +4,25 @@ import neko.chat.application.entity.{User, Email, RawPassword, HashedPassword}
 import neko.chat.application.entity.User.UserName
 import neko.chat.application.repository.UserRepository
 
-class CreateUser(
+trait CreateUser {
+  import CreateUser._
+  def execute(request: CreateUserRequest): Either[CreateUserError, User]
+}
+
+object CreateUser {
+  case class CreateUserRequest(
+      userName: String,
+      email: String,
+      rawPassword: String
+  )
+  sealed trait CreateUserError
+  case class ValidateError(asString: String) extends CreateUserError
+  case class DuplicateEmail(e: Throwable)    extends CreateUserError
+}
+
+class CreateUserImpl(
     userRepository: UserRepository
-) {
+) extends CreateUser {
 
   import CreateUser._
 
@@ -22,7 +38,7 @@ class CreateUser(
     e.left.map(ValidateError)
   }
 
-  def execute(request: CreateUserRequest): Either[CreateUserError, User] = {
+  override def execute(request: CreateUserRequest): Either[CreateUserError, User] = {
     validate(request).flatMap {
       case (userName, email, hashedPassword) =>
         userRepository.saveNewUser(userName, email, hashedPassword).left.map {
@@ -30,19 +46,5 @@ class CreateUser(
         }
     }
   }
-
-}
-
-object CreateUser {
-
-  case class CreateUserRequest(
-      userName: String,
-      email: String,
-      rawPassword: String
-  )
-
-  sealed trait CreateUserError
-  case class ValidateError(asString: String) extends CreateUserError
-  case class DuplicateEmail(e: Throwable)    extends CreateUserError
 
 }

@@ -134,7 +134,7 @@ object UserRepositoryImpl {
       pstmt.executeUpdate()
     } catch {
       case e: SQLIntegrityConstraintViolationException =>
-        throw new UserRepository.UserNotExistOrDuplicateUserNameException(e)
+        throw new UserRepository.UserNotExistOrDuplicateUserNameException(e) // emailの重複の時もこれになってしまっている
     }
     ()
   }
