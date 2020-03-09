@@ -1,58 +1,68 @@
-// package neko.chat.infra.db
+package neko.chat.infra.db
 
-// import org.scalatest._
+import java.util.UUID
+import java.time.Instant
 
-// import java.util.UUID
-// import java.time.Instant
+import neko.core.jdbc.ConnectionIO
 
-// import neko.core.jdbc.ConnectionIO
-// import neko.chat.repository.share.TestDBPool
-// import neko.chat.entity.{User, Message}
-// import neko.chat.repository.MessageRepository.MessageResponse
+import neko.chat.application.entity.{User, Message}
+import neko.chat.application.entity.User.{UserId, UserName}
+import neko.chat.application.entity.Message.{MessageId, MessageBody}
+import neko.chat.application.repository.MessageRepository.MessageResponse
 
-// class MessageRepositoryImplSpec extends FlatSpec with Matchers {
+import neko.chat.infra.db.share.TestDBPool
+import org.scalatest._
 
-//   val userRepository: UserRepositoryImpl       = new UserRepositoryImpl
-//   val messageRepository: MessageRepositoryImpl = new MessageRepositoryImpl
+class MessageRepositoryImplSpec extends FunSuite with Matchers {
 
-//   def conn() = TestDBPool.getConnection()
+  def conn() = TestDBPool.getConnection()
 
-//   object dummy {
-//     val user = User(UUID.randomUUID(), "Alice", Instant.parse("2020-01-01T10:00:00.000Z"))
-//     val messages: List[Message] = List(
-//       Message(UUID.randomUUID(), user.id, "最初のメッセージ", Instant.parse("2020-01-01T10:00:00.001Z")),
-//       Message(UUID.randomUUID(), user.id, "次のメッセージ", Instant.parse("2020-01-01T10:00:00.002Z")),
-//       Message(UUID.randomUUID(), user.id, "みっつめのメッセージ", Instant.parse("2020-01-01T10:00:00.003Z"))
-//     )
+  test("メッセージを投稿できる") {
 
-//     def genDataIO: ConnectionIO[Unit] =
-//       for {
-//         _ <- userRepository.create(user)
-//         _ <- ConnectionIO.sequence(messages.map(messageRepository.post))
-//       } yield ()
-//   }
+    val user = User(UserId(UUID.randomUUID()), UserName("Foo"), Instant.parse("2020-01-01T10:00:00.000Z"))
+    val message =
+      Message(MessageId(UUID.randomUUID()), user.id, MessageBody("Hello"), Instant.parse("2020-01-01T22:00:00.000Z"))
 
-//   "MessageRepositoryImpl" should "postできる" in {
-//     val result: Either[Throwable, Unit] = dummy.genDataIO.runRollback(conn())
-//     result.isRight shouldEqual true
-//   }
+    val io: ConnectionIO[Unit] = for {
+      _ <- UserRepositoryImpl.insertUserIO(user)
+      _ <- MessageRepositoryImpl.saveMessageIO(message)
+    } yield ()
 
-//   "MessageRepositoryImpl" should "fetch(投稿時間の降順で50件まで手に入る)" in {
-//     val io = for {
-//       _        <- dummy.genDataIO
-//       messages <- messageRepository.get()
-//     } yield messages
+    val result = io.runRollback(conn())
 
-//     val result: Either[Throwable, List[MessageResponse]] = io.runRollback(conn())
-//     val answer = Right(
-//       dummy.messages
-//         .map({ m =>
-//           MessageResponse(m, dummy.user)
-//         })
-//         .reverse
-//     )
+    result shouldEqual Right(())
 
-//     result shouldEqual answer
-//   }
+  }
 
-// }
+  test("最新のメッセージを最新順に最大50件取得できる") {
+
+    val users = Vector(
+      User(UserId(UUID.randomUUID()), UserName("Foo"), Instant.parse("2020-01-01T10:00:00.000Z")),
+      User(UserId(UUID.randomUUID()), UserName("Bar"), Instant.parse("2020-01-01T10:00:00.000Z"))
+    )
+
+    val messageResponses = for (n <- 0 until 100) yield {
+      val user = users(n % users.size)
+      val message = Message(
+        MessageId(UUID.randomUUID()),
+        user.id,
+        MessageBody("Hello" + n.toString),
+        Instant.parse("2020-01-01T10:00:00.000Z").plusSeconds(n)
+      )
+      MessageResponse(message, user)
+    }
+    val messages = messageResponses.map { case MessageResponse(message, user) => message }
+
+    val io: ConnectionIO[List[MessageResponse]] = for {
+      _                <- ConnectionIO.sequence(users.map(user => UserRepositoryImpl.insertUserIO(user)))
+      _                <- ConnectionIO.sequence(messages.map(message => MessageRepositoryImpl.saveMessageIO(message)))
+      messageResponses <- MessageRepositoryImpl.fetchLatest50messagesIO()
+    } yield messageResponses
+
+    val result = io.runRollback(conn())
+
+    result shouldEqual Right(messageResponses.reverse.take(50))
+
+  }
+
+}

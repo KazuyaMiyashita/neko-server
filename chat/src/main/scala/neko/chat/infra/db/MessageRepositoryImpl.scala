@@ -74,7 +74,7 @@ object MessageRepositoryImpl {
         ),
         user = User(
           id = UserId(UUID.fromString(row.getString("u.id"))),
-          name = UserName(row.getString("u.screen_name")),
+          name = UserName(row.getString("u.name")),
           createdAt = row.getTimestamp("u.created_at").toInstant
         )
       )
@@ -85,8 +85,8 @@ object MessageRepositoryImpl {
     val query =
       """insert into messages(id, user_id, body, created_at) values (?, ?, ?, ?);"""
     val stmt = conn.prepareStatement(query)
-    stmt.setString(1, message.id.toString)
-    stmt.setString(2, message.userId.toString)
+    stmt.setString(1, message.id.asString)
+    stmt.setString(2, message.userId.asString)
     stmt.setString(3, message.body.value)
     stmt.setTimestamp(4, Timestamp.from(message.createdAt))
     stmt.executeUpdate()
