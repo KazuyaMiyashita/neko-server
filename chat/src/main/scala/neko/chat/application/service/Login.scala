@@ -3,10 +3,25 @@ package neko.chat.application.service
 import neko.chat.application.entity.{Email, Token, RawPassword, HashedPassword}
 import neko.chat.application.repository.{UserRepository, TokenRepository}
 
-class Login(
+trait Login {
+  import Login._
+  def execute(request: LoginRequest): Either[LoginError, Token]
+}
+
+object Login {
+  case class LoginRequest(
+      email: String,
+      rawPassword: String
+  )
+  sealed trait LoginError
+  case class ValidateError(asString: String) extends LoginError
+  object UserNotExist                        extends LoginError
+}
+
+class LoginImpl(
     userRepository: UserRepository,
     tokenRepositoty: TokenRepository
-) {
+) extends Login {
 
   import Login._
 
@@ -20,7 +35,7 @@ class Login(
     e.left.map(ValidateError)
   }
 
-  def execute(request: LoginRequest): Either[LoginError, Token] = {
+  override def execute(request: LoginRequest): Either[LoginError, Token] = {
     validate(request).flatMap {
       case (email, hashedPassword) =>
         userRepository
@@ -33,18 +48,5 @@ class Login(
           }
     }
   }
-
-}
-
-object Login {
-
-  case class LoginRequest(
-      email: String,
-      rawPassword: String
-  )
-
-  sealed trait LoginError
-  case class ValidateError(asString: String) extends LoginError
-  object UserNotExist                        extends LoginError
 
 }

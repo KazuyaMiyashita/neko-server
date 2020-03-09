@@ -31,10 +31,6 @@ class AuthController(
 
   def login(request: HttpRequest): HttpResponse = {
     val result = for {
-      token <- request.header.cookies
-        .get("token")
-        .map(Token.apply)
-        .toRight(HttpResponse(UNAUTHORIZED))
       loginRequest <- parseJsonRequest(request, loginRequestDecoder)
       token <- login.execute(loginRequest).left.map {
         case ValidateError(message) => HttpResponse(BAD_REQUEST, message)
@@ -79,7 +75,7 @@ object AuthController {
 
   case class SessionResponse(userId: UserId)
   implicit val sessionResponseEncoder: JsonEncoder[SessionResponse] = new JsonEncoder[SessionResponse] {
-    override def encode(value: SessionResponse): JsValue = Json.obj("userId" -> Json.str(value.userId.toString))
+    override def encode(value: SessionResponse): JsValue = Json.obj("userId" -> Json.str(value.userId.asString))
   }
 
   val loginRequestDecoder: JsonDecoder[LoginRequest] = new JsonDecoder[LoginRequest] {
