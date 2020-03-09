@@ -3,7 +3,19 @@ package neko.chat.application.service
 import neko.chat.application.entity.User.{UserId, UserName}
 import neko.chat.application.repository.UserRepository
 
-class EditUserInfo(userRepository: UserRepository) {
+trait EditUserInfo {
+  import EditUserInfo._
+  def execute(userId: UserId, newUserNameStr: String): Either[EditUserInfoError, Unit]
+}
+
+object EditUserInfo {
+  sealed trait EditUserInfoError
+  case class ValidateError(asString: String) extends EditUserInfoError
+}
+
+class EditUserInfoImpl(
+    userRepository: UserRepository
+) extends EditUserInfo {
 
   import EditUserInfo._
 
@@ -11,17 +23,10 @@ class EditUserInfo(userRepository: UserRepository) {
     UserName.validate(newUserNameStr).left.map(ValidateError)
   }
 
-  def execute(userId: UserId, newUserNameStr: String): Either[EditUserInfoError, Unit] = {
+  override def execute(userId: UserId, newUserNameStr: String): Either[EditUserInfoError, Unit] = {
     validate(newUserNameStr).map { newUserName =>
       userRepository.updateUserName(userId, newUserName)
     }
   }
-
-}
-
-object EditUserInfo {
-
-  sealed trait EditUserInfoError
-  case class ValidateError(asString: String) extends EditUserInfoError
 
 }

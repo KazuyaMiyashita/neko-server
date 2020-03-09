@@ -1,14 +1,14 @@
 package neko.core.http
 
 sealed trait HttpMethod {
-
   def asString: String
-
 }
+
 object HttpMethod {
   def fromString(m: String): HttpMethod = m match {
     case "GET"     => GET
     case "POST"    => POST
+    case "PUT"     => PUT
     case "OPTIONS" => OPTIONS
     case _         => _UNKNOWN
   }
@@ -18,6 +18,9 @@ object GET extends HttpMethod {
 }
 object POST extends HttpMethod {
   override def asString = "POST"
+}
+object PUT extends HttpMethod {
+  override def asString = "PUT"
 }
 object OPTIONS extends HttpMethod {
   override def asString = "OPTIONS"

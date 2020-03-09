@@ -16,6 +16,7 @@ class ChatApplication(
       Router(
         GET  -> "/"             -> (_ => HttpResponse(OK, "Hello My Server!")),
         POST -> "/users"        -> userController.create,
+        PUT  -> "/users"        -> userController.edit,
         POST -> "/auth/login"   -> authController.login,
         POST -> "/auth/logout"  -> authController.logout,
         GET  -> "/auth/session" -> authController.session,

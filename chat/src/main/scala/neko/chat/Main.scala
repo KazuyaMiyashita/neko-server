@@ -10,7 +10,9 @@ import neko.chat.application.service.{
   CreateUser,
   CreateUserImpl,
   EditUserInfo,
+  EditUserInfoImpl,
   FetchUserIdByToken,
+  FetchUserIdByTokenImpl,
   GetMessages,
   Login,
   Logout,
@@ -38,13 +40,13 @@ object Main extends App {
   val tokenRepository: TokenRepository     = new TokenRepositoryImpl(dbPool, clock, config.applicationSecret)
   val userRepository: UserRepository       = new UserRepositoryImpl(dbPool, clock, config.applicationSecret)
 
-  val createUser: CreateUser = new CreateUserImpl(userRepository)
-  val editUserInfo           = new EditUserInfo(userRepository)
-  val fetchUserIdByToken     = new FetchUserIdByToken(tokenRepository)
-  val getMessages            = new GetMessages(messageRepository)
-  val login                  = new Login(userRepository, tokenRepository)
-  val logout                 = new Logout(tokenRepository)
-  val postMessage            = new PostMessage(messageRepository)
+  val createUser: CreateUser                 = new CreateUserImpl(userRepository)
+  val editUserInfo: EditUserInfo             = new EditUserInfoImpl(userRepository)
+  val fetchUserIdByToken: FetchUserIdByToken = new FetchUserIdByTokenImpl(tokenRepository)
+  val getMessages                            = new GetMessages(messageRepository)
+  val login                                  = new Login(userRepository, tokenRepository)
+  val logout                                 = new Logout(tokenRepository)
+  val postMessage                            = new PostMessage(messageRepository)
 
   val authController    = new AuthController(fetchUserIdByToken, login, logout)
   val messageController = new MessageController(fetchUserIdByToken, getMessages, postMessage)

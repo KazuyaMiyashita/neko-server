@@ -54,7 +54,7 @@ object MessageController {
     Json
       .parse(request.body.asString)
       .flatMap(decoder.decode)
-      .toRight(HttpResponse(BAD_REQUEST))
+      .toRight(HttpResponse(BAD_REQUEST, "json parse error"))
   }
 
   implicit val messageResponseEncoder: JsonEncoder[MessageResponse] = new JsonEncoder[MessageResponse] {
