@@ -6,39 +6,39 @@ trait JsonEncoder[T] {
 
 object JsonEncoder {
 
-  implicit object StringEncoder extends JsonEncoder[String] {
-    override def encode(value: String): JsValue = JsString(value)
+  given stringEncoder as JsonEncoder[String] {
+    def encode(value: String): JsValue = JsString(value)
   }
 
-  implicit object DoubleEncoder extends JsonEncoder[Double] {
-    override def encode(value: Double): JsValue = JsNumber(value)
+  given doubleEncoder as JsonEncoder[Double] {
+    def encode(value: Double): JsValue = JsNumber(value)
   }
 
-  implicit object IntEncoder extends JsonEncoder[Int] {
-    override def encode(value: Int): JsValue = JsNumber(value)
+  given intEncoder as JsonEncoder[Int] {
+    def encode(value: Int): JsValue = JsNumber(value)
   }
 
-  implicit object BooleanEncoder extends JsonEncoder[Boolean] {
-    override def encode(value: Boolean): JsValue = JsBoolean(value)
+  given booleanEncoder as JsonEncoder[Boolean] {
+    def encode(value: Boolean): JsValue = JsBoolean(value)
   }
 
-  implicit def iterableEncoder[U: JsonEncoder, Iter[U] <: Iterable[U]] = new JsonEncoder[Iter[U]] {
-    override def encode(value: Iter[U]): JsValue = JsArray(value.map(Json.encode(_)).toVector)
+  given iterableEncoder (using U: JsonEncoder, Iter[U]: Iterable[U]) as JsonEncoder[Iter[U]] {
+    def encode(value: Iter[U]): JsValue = JsArray(value.map(Json.encode(_)).toVector)
   }
 
-  implicit object NilEncoder extends JsonEncoder[Nil.type] {
-    override def encode(value: Nil.type): JsValue = JsArray(Vector.empty)
+  given nilEncoder as JsonEncoder[Nil.type] {
+    def encode(value: Nil.type): JsValue = JsArray(Vector.empty)
   }
 
-  implicit def optionEncoder[U: JsonEncoder, Opt[U] <: Option[U]] = new JsonEncoder[Opt[U]] {
-    override def encode(value: Opt[U]): JsValue = value match {
+  given optionEncoder (using U: JsonEncoder, Opt[U]: Option[U]) as JsonEncoder[Opt[U]] {
+    def encode(value: Opt[U]): JsValue = value match {
       case Some(v) => Json.encode(v)
       case None    => JsNull
     }
   }
 
-  implicit object NoneEncoder extends JsonEncoder[None.type] {
-    override def encode(value: None.type): JsValue = JsNull
+  given noneEncoder as JsonEncoder[None.type] {
+    def encode(value: None.type): JsValue = JsNull
   }
 
 }

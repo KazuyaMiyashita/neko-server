@@ -1,5 +1,6 @@
 package neko.core.json
 
+import scala.language.implicitConversions
 import scala.util.parsing.combinator._
 
 object JsonParser extends JavaTokenParsers {
