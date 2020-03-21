@@ -22,27 +22,22 @@ case class ConnectionIO[+E, T](private val run: Connection => Try[Either[E, T]])
   def runTx(conn: Connection): Try[Either[E, T]] = {
     Try {
       conn.setAutoCommit(false)
-      val res = run(conn)
-      res match {
+      run(conn).tap {
         case Success(v) if v.isRight => conn.commit()
         case _                       => conn.rollback()
       }
-      res
     }.flatten.tap(_ => conn.close())
   }
   def runReadOnly(conn: Connection): Try[Either[E, T]] = {
     Try {
       conn.setReadOnly(true)
-      val res = run(conn)
-      res
+      run(conn)
     }.flatten.tap(_ => conn.close())
   }
   def runRollback(conn: Connection): Try[Either[E, T]] = {
     Try {
       conn.setAutoCommit(false)
-      val res = run(conn)
-      conn.rollback()
-      res
+      run(conn).tap(_ => conn.rollback())
     }.flatten.tap(_ => conn.close())
   }
 }
