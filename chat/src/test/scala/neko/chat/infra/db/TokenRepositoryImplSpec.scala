@@ -4,6 +4,8 @@ import java.util.UUID
 import java.time.Instant
 import java.sql.SQLIntegrityConstraintViolationException
 
+import scala.util.{Try, Success}
+
 import neko.core.jdbc.ConnectionIO
 import neko.chat.application.entity.User.{UserId, UserName}
 import neko.chat.application.entity.{User, Token}
@@ -66,13 +68,13 @@ class TokenRepositoryImplSpec extends FunSuite with Matchers {
     val salt  = "dummy-salt-dummy-salt"
     val token = TokenRepositoryImpl._createToken(userId, now.toEpochMilli, salt)
 
-    val io: ConnectionIO[Unit] = for {
+    val io: ConnectionIO[Nothing, Unit] = for {
       _ <- UserRepositoryImpl.insertUserIO(user)
       _ <- TokenRepositoryImpl.insertTokenIO(userId, token, now)
     } yield ()
-    val result: Either[Throwable, Unit] = io.runRollback(conn())
+    val result: Try[Either[Nothing, Unit]] = io.runRollback(conn())
 
-    result shouldEqual Right(())
+    result shouldEqual Success(Right(()))
   }
 
   test("usersに該当のidが存在しない時は、tokenはDBに追加できない") {
@@ -82,16 +84,12 @@ class TokenRepositoryImplSpec extends FunSuite with Matchers {
     val salt  = "dummy-salt-dummy-salt"
     val token = TokenRepositoryImpl._createToken(userId, now.toEpochMilli, salt)
 
-    val io: ConnectionIO[Unit] = for {
+    val io: ConnectionIO[Nothing, Unit] = for {
       _ <- TokenRepositoryImpl.insertTokenIO(userId, token, now)
     } yield ()
-    val result: Either[Throwable, Unit] = io.runRollback(conn())
+    val result: Try[Either[Nothing, Unit]] = io.runRollback(conn())
 
-    assertThrows[SQLIntegrityConstraintViolationException] {
-      result.left.map { e: Throwable =>
-        throw e
-      }
-    }
+    result.toEither.swap.getOrElse(throw new Exception) shouldBe a[SQLIntegrityConstraintViolationException]
   }
 
   test("tokenから特定のUserIdを取得できる") {
@@ -111,7 +109,7 @@ class TokenRepositoryImplSpec extends FunSuite with Matchers {
     val targetUserId = userIds(3)
     val targetToken  = tokens(3)
 
-    val io: ConnectionIO[Option[UserId]] = for {
+    val io: ConnectionIO[Nothing, Option[UserId]] = for {
       _ <- ConnectionIO.sequence(users.map(user => UserRepositoryImpl.insertUserIO(user)))
       _ <- ConnectionIO.sequence {
         (users zip tokens).map {
@@ -122,9 +120,9 @@ class TokenRepositoryImplSpec extends FunSuite with Matchers {
       userId <- TokenRepositoryImpl.fetchUserIdByTokenIO(targetToken)
     } yield userId
 
-    val result: Either[Throwable, Option[UserId]] = io.runRollback(conn())
+    val result: Try[Either[Nothing, Option[UserId]]] = io.runRollback(conn())
 
-    result shouldEqual Right(Some(targetUserId))
+    result shouldEqual Success(Right(Some(targetUserId)))
   }
 
   test("指定したtokenのみ削除できる") {
@@ -144,7 +142,7 @@ class TokenRepositoryImplSpec extends FunSuite with Matchers {
     val targetUserId = userIds(3)
     val targetToken  = tokens(3)
 
-    val io: ConnectionIO[(List[Option[UserId]], Boolean, List[Option[UserId]])] = for {
+    val io: ConnectionIO[Nothing, (List[Option[UserId]], Boolean, List[Option[UserId]])] = for {
       _ <- ConnectionIO.sequence(users.map(user => UserRepositoryImpl.insertUserIO(user)))
       _ <- ConnectionIO.sequence {
         (users zip tokens).map {
@@ -157,10 +155,8 @@ class TokenRepositoryImplSpec extends FunSuite with Matchers {
       after     <- ConnectionIO.sequence(tokens.map(token => TokenRepositoryImpl.fetchUserIdByTokenIO(token)))
     } yield (before.toList, isDeleted, after.toList)
 
-    val result: Either[Throwable, (List[Option[UserId]], Boolean, List[Option[UserId]])] = io.runRollback(conn())
-    val (before, isDeleted, after) = result.left.map { e: Throwable =>
-      throw e
-    }.merge
+    val result: Try[Either[Throwable, (List[Option[UserId]], Boolean, List[Option[UserId]])]] = io.runRollback(conn())
+    val (before, isDeleted, after)                                                            = result.get.getOrElse(throw new Exception)
 
     before shouldEqual userIds.map(Some(_))
     isDeleted shouldEqual true

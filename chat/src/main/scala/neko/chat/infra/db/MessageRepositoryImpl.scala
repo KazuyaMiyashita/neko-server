@@ -4,6 +4,8 @@ import java.util.UUID
 import java.time.Clock
 import java.sql.{ResultSet, Timestamp}
 
+import scala.util.Try
+
 import neko.core.jdbc.{ConnectionIO, DBPool}
 import neko.core.jdbc.query._
 
@@ -21,14 +23,10 @@ class MessageRepositoryImpl(
 
   import MessageRepositoryImpl._
 
-  override def fetchLatest50messages(): List[MessageResponse] = {
+  override def fetchLatest50messages(): Try[List[MessageResponse]] = {
     fetchLatest50messagesIO
       .runReadOnly(dbPool.getConnection())
-      .left
-      .map { e: Throwable =>
-        throw e
-      }
-      .merge
+      .map(_.merge)
   }
 
   override def createMessageEntity(userId: UserId, body: MessageBody): Message = {
@@ -40,21 +38,17 @@ class MessageRepositoryImpl(
     )
   }
 
-  override def saveMessage(message: Message): Unit = {
+  override def saveMessage(message: Message): Try[Unit] = {
     saveMessageIO(message)
       .runTx(dbPool.getConnection())
-      .left
-      .map { e: Throwable =>
-        throw e
-      }
-      .merge
+      .map(_.merge)
   }
 
 }
 
 object MessageRepositoryImpl {
 
-  def fetchLatest50messagesIO(): ConnectionIO[List[MessageResponse]] = ConnectionIO { conn =>
+  def fetchLatest50messagesIO(): ConnectionIO[Nothing, List[MessageResponse]] = ConnectionIO.right { conn =>
     val query =
       """select * from messages as m
         |  inner join users u
@@ -81,7 +75,7 @@ object MessageRepositoryImpl {
     list(pstmt, mapping)(conn)
   }
 
-  def saveMessageIO(message: Message): ConnectionIO[Unit] = ConnectionIO { conn =>
+  def saveMessageIO(message: Message): ConnectionIO[Nothing, Unit] = ConnectionIO.right { conn =>
     val query =
       """insert into messages(id, user_id, body, created_at) values (?, ?, ?, ?);"""
     val stmt = conn.prepareStatement(query)

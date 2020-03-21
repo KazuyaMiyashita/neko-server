@@ -1,5 +1,7 @@
 package neko.chat.application.service
 
+import scala.util.{Success, Failure}
+
 import neko.chat.application.entity.{Email, Token, RawPassword}
 import neko.chat.application.repository.{UserRepository, TokenRepository}
 
@@ -26,10 +28,11 @@ object Login {
 
   sealed trait Error
   object Error {
-    sealed trait ValidateError      extends Error
-    case object EmailWrongFormat    extends ValidateError
-    case object RawPasswordTooShort extends ValidateError
-    case object UserNotExist        extends Error
+    sealed trait ValidateError       extends Error
+    case object EmailWrongFormat     extends ValidateError
+    case object RawPasswordTooShort  extends ValidateError
+    case object UserNotExist         extends Error
+    case class Unknown(e: Throwable) extends Error
   }
 }
 
@@ -44,7 +47,14 @@ class LoginImpl(
     for {
       t <- request.validate
       (email, rawPassword) = (t._1, t._2)
-      userId <- userRepository.fetchUserIdBy(email, rawPassword).toRight(Error.UserNotExist)
+      userId <- userRepository.fetchUserIdBy(email, rawPassword) match {
+        case Failure(e) => Left(Error.Unknown(e))
+        case Success(v) =>
+          v match {
+            case None         => Left(Error.UserNotExist)
+            case Some(userId) => Right(userId)
+          }
+      }
     } yield {
       val token = tokenRepositoty.createToken(userId)
       tokenRepositoty.saveToken(userId, token)

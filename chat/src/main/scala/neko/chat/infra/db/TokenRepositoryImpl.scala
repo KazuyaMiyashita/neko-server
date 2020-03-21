@@ -4,6 +4,7 @@ import java.util.UUID
 import java.time.{Clock, Instant}
 import java.sql.{ResultSet, Timestamp}
 
+import scala.util.Try
 import scala.util.Random
 
 import neko.core.jdbc.{ConnectionIO, DBPool}
@@ -25,34 +26,22 @@ class TokenRepositoryImpl(
     _createToken(userId, clock.instant().toEpochMilli, applicationSecret)
   }
 
-  override def saveToken(userId: UserId, token: Token): Unit = {
+  override def saveToken(userId: UserId, token: Token): Try[Unit] = {
     insertTokenIO(userId, token, clock.instant())
       .runTx(dbPool.getConnection())
-      .left
-      .map { e: Throwable =>
-        throw e
-      }
-      .merge
+      .map(_.merge)
   }
 
-  override def deleteToken(token: Token): Boolean = {
+  override def deleteToken(token: Token): Try[Boolean] = {
     deleteTokenIO(token)
       .runTx(dbPool.getConnection())
-      .left
-      .map { e: Throwable =>
-        throw e
-      }
-      .merge
+      .map(_.merge)
   }
 
-  override def fetchUserIdByToken(token: Token): Option[UserId] = {
+  override def fetchUserIdByToken(token: Token): Try[Option[UserId]] = {
     fetchUserIdByTokenIO(token)
       .runReadOnly(dbPool.getConnection())
-      .left
-      .map { e: Throwable =>
-        throw e
-      }
-      .merge
+      .map(_.merge)
   }
 
 }
@@ -74,17 +63,18 @@ object TokenRepositoryImpl {
     Token(List.fill(length)(ts(rnd.nextInt(tsLen))).mkString)
   }
 
-  def insertTokenIO(userId: UserId, token: Token, now: Instant): ConnectionIO[Unit] = ConnectionIO { conn =>
-    val query =
-      """insert into tokens(token, user_id, expires_at) values (?, ?, ?);"""
-    val pstmt = conn.prepareStatement(query)
-    pstmt.setString(1, token.value)
-    pstmt.setString(2, userId.asString)
-    pstmt.setTimestamp(3, Timestamp.from(now.plusSeconds(60 * 60 * 24)))
-    pstmt.executeUpdate()
+  def insertTokenIO(userId: UserId, token: Token, now: Instant): ConnectionIO[Nothing, Unit] = ConnectionIO.right {
+    conn =>
+      val query =
+        """insert into tokens(token, user_id, expires_at) values (?, ?, ?);"""
+      val pstmt = conn.prepareStatement(query)
+      pstmt.setString(1, token.value)
+      pstmt.setString(2, userId.asString)
+      pstmt.setTimestamp(3, Timestamp.from(now.plusSeconds(60 * 60 * 24)))
+      pstmt.executeUpdate()
   }
 
-  def deleteTokenIO(token: Token): ConnectionIO[Boolean] = ConnectionIO { conn =>
+  def deleteTokenIO(token: Token): ConnectionIO[Nothing, Boolean] = ConnectionIO.right { conn =>
     val query = "delete from tokens where token = ?;"
     val pstmt = conn.prepareStatement(query)
     pstmt.setString(1, token.value)
@@ -93,7 +83,7 @@ object TokenRepositoryImpl {
     if (rows == 1) true else false
   }
 
-  def fetchUserIdByTokenIO(token: Token): ConnectionIO[Option[UserId]] = ConnectionIO { conn =>
+  def fetchUserIdByTokenIO(token: Token): ConnectionIO[Nothing, Option[UserId]] = ConnectionIO.right { conn =>
     val query = "select user_id from tokens where token = ?;"
     val pstmt = conn.prepareStatement(query)
     pstmt.setString(1, token.value)

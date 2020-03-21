@@ -3,6 +3,8 @@ package neko.chat.infra.db
 import java.util.UUID
 import java.time.Instant
 
+import scala.util.{Try, Success}
+
 import neko.core.jdbc.ConnectionIO
 
 import neko.chat.application.entity.{User, Message}
@@ -23,14 +25,14 @@ class MessageRepositoryImplSpec extends FunSuite with Matchers {
     val message =
       Message(MessageId(UUID.randomUUID()), user.id, MessageBody("Hello"), Instant.parse("2020-01-01T22:00:00.000Z"))
 
-    val io: ConnectionIO[Unit] = for {
+    val io: ConnectionIO[Nothing, Unit] = for {
       _ <- UserRepositoryImpl.insertUserIO(user)
       _ <- MessageRepositoryImpl.saveMessageIO(message)
     } yield ()
 
-    val result = io.runRollback(conn())
+    val result: Try[Either[Nothing, Unit]] = io.runRollback(conn())
 
-    result shouldEqual Right(())
+    result shouldEqual Success(Right(()))
 
   }
 
@@ -53,15 +55,15 @@ class MessageRepositoryImplSpec extends FunSuite with Matchers {
     }
     val messages = messageResponses.map { case MessageResponse(message, user) => message }
 
-    val io: ConnectionIO[List[MessageResponse]] = for {
+    val io: ConnectionIO[Nothing, List[MessageResponse]] = for {
       _                <- ConnectionIO.sequence(users.map(user => UserRepositoryImpl.insertUserIO(user)))
       _                <- ConnectionIO.sequence(messages.map(message => MessageRepositoryImpl.saveMessageIO(message)))
       messageResponses <- MessageRepositoryImpl.fetchLatest50messagesIO()
     } yield messageResponses
 
-    val result = io.runRollback(conn())
+    val result: Try[Either[Nothing, List[MessageResponse]]] = io.runRollback(conn())
 
-    result shouldEqual Right(messageResponses.reverse.take(50))
+    result shouldEqual Success(Right(messageResponses.reverse.take(50)))
 
   }
 

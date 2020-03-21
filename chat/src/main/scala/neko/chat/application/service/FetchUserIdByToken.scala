@@ -13,7 +13,7 @@ class FetchUserIdByTokenImpl(
 ) extends FetchUserIdByToken {
 
   override def execute(token: Token): Option[UserId] = {
-    tokenRepository.fetchUserIdByToken(token)
+    tokenRepository.fetchUserIdByToken(token).toOption.flatten
   }
 
 }

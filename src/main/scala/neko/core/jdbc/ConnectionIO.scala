@@ -1,59 +1,78 @@
 package neko.core.jdbc
 
 import java.sql.Connection
+import scala.util.{Try, Success, Failure}
+import scala.util.chaining._
 
-case class ConnectionIO[T](run: Connection => T) {
-  def map[U](f: T => U): ConnectionIO[U]                   = ConnectionIO(run andThen f)
-  def flatMap[U](f: T => ConnectionIO[U]): ConnectionIO[U] = ConnectionIO(c => f(run(c)).run(c))
+case class ConnectionIO[+E, T](private val run: Connection => Try[Either[E, T]]) {
+  def map[U](f: T => U): ConnectionIO[E, U] = ConnectionIO(run andThen (t => t.map(e => e.map(f))))
+  def flatMap[EE >: E, U](f: T => ConnectionIO[EE, U]): ConnectionIO[EE, U] = ConnectionIO { c =>
+    run(c).flatMap {
+      case Left(v)  => Success(Left(v))
+      case Right(v) => f(v).run(c)
+    }
+  }
+  def recover[EE >: E](pf: PartialFunction[Throwable, EE]): ConnectionIO[EE, T] = ConnectionIO { c =>
+    run(c) match {
+      case Failure(e) if pf.isDefinedAt(e) => Success(Left(pf(e)))
+      case a                               => a
+    }
+  }
 
-  def runTx(conn: Connection): Either[Throwable, T] = {
-    conn.setAutoCommit(false)
-    try {
+  def runTx(conn: Connection): Try[Either[E, T]] = {
+    Try {
+      conn.setAutoCommit(false)
       val res = run(conn)
-      conn.commit()
-      Right(res)
-    } catch {
-      case e: Throwable => {
-        conn.rollback()
-        Left(e)
+      res match {
+        case Success(v) if v.isRight => conn.commit()
+        case _                       => conn.rollback()
       }
-    } finally {
-      conn.close()
-    }
+      res
+    }.flatten.tap(_ => conn.close())
   }
-
-  def runReadOnly(conn: Connection): Either[Throwable, T] = {
-    conn.setReadOnly(true)
-    try {
-      Right(run(conn))
-    } catch {
-      case e: Throwable => {
-        Left(e)
-      }
-    } finally {
-      conn.close()
-    }
+  def runReadOnly(conn: Connection): Try[Either[E, T]] = {
+    Try {
+      conn.setReadOnly(true)
+      val res = run(conn)
+      res
+    }.flatten.tap(_ => conn.close())
   }
-
-  def runRollback(conn: Connection): Either[Throwable, T] = {
-    conn.setAutoCommit(false)
-    try {
-      Right(run(conn))
-    } catch {
-      case e: Throwable => {
-        Left(e)
-      }
-    } finally {
+  def runRollback(conn: Connection): Try[Either[E, T]] = {
+    Try {
+      conn.setAutoCommit(false)
+      val res = run(conn)
       conn.rollback()
-      conn.close()
-    }
+      res
+    }.flatten.tap(_ => conn.close())
   }
 }
 
 object ConnectionIO {
 
-  def sequence[T](actions: Seq[ConnectionIO[T]]): ConnectionIO[Seq[T]] = {
-    ConnectionIO(c => actions.map(_.run(c)))
+  def right[T](f: Connection => T): ConnectionIO[Nothing, T] = {
+    ConnectionIO(conn => Try(Right(f(conn))))
+  }
+
+  def either[E, T](f: Connection => Either[E, T]): ConnectionIO[E, T] = {
+    ConnectionIO(conn => Try(f(conn)))
+  }
+
+  def sequence[E, T](actions: Seq[ConnectionIO[E, T]]): ConnectionIO[E, Seq[T]] = {
+    ConnectionIO { c =>
+      val aio = actions.foldLeft(ConnectionIO.either[E, Seq[T]](_ => Right(Seq.empty))) {
+        case (acc, io) =>
+          io.run(c) match {
+            case Success(either) =>
+              either match {
+                case Right(v) => acc.map(v +: _)
+                case Left(v)  => ConnectionIO(_ => Success(Left(v)))
+              }
+            case Failure(e) => ConnectionIO(_ => Failure(e))
+          }
+      }
+
+      aio.run(c).map(_.map(_.reverse))
+    }
   }
 
 }

@@ -3,10 +3,12 @@ package neko.chat.infra.db
 import java.util.UUID
 import java.time.Instant
 
+import scala.util.{Try, Success}
+
 import neko.core.jdbc.ConnectionIO
 import neko.chat.application.entity.User.{UserId, UserName}
 import neko.chat.application.entity.{User, RawPassword, HashedPassword, Email, Auth}
-import neko.chat.application.repository.UserRepository.UserNotExistOrDuplicateUserNameException
+import neko.chat.application.repository.UserRepository
 
 import neko.chat.infra.db.share.TestDBPool
 import org.scalatest._
@@ -69,14 +71,14 @@ class UserRepositoryImplSpec extends FunSuite with Matchers {
     val now    = Instant.parse("2020-01-01T10:00:00.000Z")
     val user   = User(userId, UserName("Foo"), now)
 
-    val io: ConnectionIO[Option[User]] = for {
+    val io: ConnectionIO[Nothing, Option[User]] = for {
       _       <- UserRepositoryImpl.insertUserIO(user)
       userOpt <- UserRepositoryImpl.selectUserIO(userId)
     } yield userOpt
 
-    val result = io.runRollback(conn())
+    val result: Try[Either[Nothing, Option[User]]] = io.runRollback(conn())
 
-    result shouldEqual Right(Some(user))
+    result shouldEqual Success(Right(Some(user)))
   }
 
   test("usersとauthsを追加してemail,hashedPasswordからuserIdを取得する") {
@@ -89,15 +91,15 @@ class UserRepositoryImplSpec extends FunSuite with Matchers {
     val email             = Email("dummy@example.com")
     val auth              = Auth(email, hashedPassword, userId)
 
-    val io: ConnectionIO[Option[UserId]] = for {
+    val io: ConnectionIO[Any, Option[UserId]] = for {
       _       <- UserRepositoryImpl.insertUserIO(user)
       _       <- UserRepositoryImpl.insertAuthIO(auth)
       userOpt <- UserRepositoryImpl.selectUserIdFromAuthsIO(email, hashedPassword)
     } yield userOpt
 
-    val result = io.runRollback(conn())
+    val result: Try[Either[Any, Option[User.UserId]]] = io.runRollback(conn())
 
-    result shouldEqual Right(Some(userId))
+    result shouldEqual Success(Right(Some(userId)))
   }
 
   test("authsのemailは重複できない") {
@@ -107,16 +109,16 @@ class UserRepositoryImplSpec extends FunSuite with Matchers {
     val user2 = User(UserId(UUID.randomUUID()), UserName("Bar"), Instant.parse("2020-01-01T10:00:00.000Z"))
     val auth2 = Auth(email, HashedPassword("dummy-dummy-dummy"), user2.id)
 
-    val io: ConnectionIO[Unit] = for {
+    val io: ConnectionIO[UserRepository.SaveNewUserError, Unit] = for {
       _ <- UserRepositoryImpl.insertUserIO(user1)
       _ <- UserRepositoryImpl.insertAuthIO(auth1)
       _ <- UserRepositoryImpl.insertUserIO(user2)
       _ <- UserRepositoryImpl.insertAuthIO(auth2)
     } yield ()
 
-    val result = io.runRollback(conn())
+    val result: Try[Either[UserRepository.SaveNewUserError, Unit]] = io.runRollback(conn())
 
-    assert(result.swap.getOrElse(throw new Exception).isInstanceOf[UserNotExistOrDuplicateUserNameException])
+    result.get.swap.getOrElse(throw new Exception) shouldBe a[UserRepository.SaveNewUserError.DuplicateEmail]
   }
 
   test("特定のuserのnameを変更出来る") {
@@ -135,15 +137,15 @@ class UserRepositoryImplSpec extends FunSuite with Matchers {
     val updatedUser                     = targetUser.copy(name = updatedUserName)
     val updatedUsers: Seq[Option[User]] = users.updated(3, updatedUser).map(Some(_))
 
-    val io: ConnectionIO[Seq[Option[User]]] = for {
+    val io: ConnectionIO[Nothing, Seq[Option[User]]] = for {
       _        <- ConnectionIO.sequence(users.map(user => UserRepositoryImpl.insertUserIO(user)))
       _        <- UserRepositoryImpl.updateUserNameIO(targetUser.id, updatedUserName)
       userOpts <- ConnectionIO.sequence(users.map(user => UserRepositoryImpl.selectUserIO(user.id)))
     } yield userOpts
 
-    val result = io.runRollback(conn())
+    val result: Try[Either[Nothing, Seq[Option[User]]]] = io.runRollback(conn())
 
-    result shouldEqual Right(updatedUsers)
+    result shouldEqual Success(Right(updatedUsers))
   }
 
 }

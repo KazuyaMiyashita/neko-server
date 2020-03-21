@@ -1,7 +1,7 @@
 package neko.chat.controller
 
 import neko.core.http.{HttpRequest, HttpResponse}
-import neko.core.http.{HttpStatus, OK, BAD_REQUEST, UNAUTHORIZED}
+import neko.core.http.{HttpStatus, OK, BAD_REQUEST, UNAUTHORIZED, INTERNAL_SERVER_ERROR}
 import neko.core.json.Json
 
 import neko.core.json.{JsonDecoder, JsonEncoder}
@@ -21,8 +21,14 @@ class MessageController(
   import MessageController._
 
   def get(request: HttpRequest): HttpResponse = {
-    val list: List[MessageResponse] = getMessages.latest50messages()
-    createJsonResponse(OK, list)
+    val result: Either[HttpResponse, HttpResponse] = getMessages
+      .latest50messages()
+      .map(list => createJsonResponse(OK, list))
+      .left
+      .map {
+        case GetMessages.Error.Unknown(e) => println(e); HttpResponse(INTERNAL_SERVER_ERROR)
+      }
+    result.merge
   }
 
   def post(request: HttpRequest): HttpResponse = {

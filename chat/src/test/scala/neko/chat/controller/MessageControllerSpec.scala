@@ -22,20 +22,23 @@ class MessageControllerSpec extends FlatSpec with Matchers {
 
   "GET /messages" should "200" in {
     val stubGetMessages = new GetMessages {
-      override def latest50messages(): List[MessageResponse] = List(
-        MessageResponse(
-          MessageId(UUID.fromString("64c9fa7e-93f9-483d-9508-25e582736882")),
-          MessageBody("Hello2"),
-          UserName("Bar"),
-          Instant.parse("2020-01-02T00:00:00.000Z")
-        ),
-        MessageResponse(
-          MessageId(UUID.fromString("53247465-de8c-47e8-ae01-d46d04db5dc2")),
-          MessageBody("Hello"),
-          UserName("Foo"),
-          Instant.parse("2020-01-01T00:00:00.000Z")
+      override def latest50messages(): Either[GetMessages.Error, List[MessageResponse]] =
+        Right(
+          List(
+            MessageResponse(
+              MessageId(UUID.fromString("64c9fa7e-93f9-483d-9508-25e582736882")),
+              MessageBody("Hello2"),
+              UserName("Bar"),
+              Instant.parse("2020-01-02T00:00:00.000Z")
+            ),
+            MessageResponse(
+              MessageId(UUID.fromString("53247465-de8c-47e8-ae01-d46d04db5dc2")),
+              MessageBody("Hello"),
+              UserName("Foo"),
+              Instant.parse("2020-01-01T00:00:00.000Z")
+            )
+          )
         )
-      )
     }
     val messageController =
       new MessageController(fetchUserIdByToken = null, getMessages = stubGetMessages, postMessage = null)

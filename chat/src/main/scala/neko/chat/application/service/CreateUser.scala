@@ -1,5 +1,7 @@
 package neko.chat.application.service
 
+import scala.util.{Success, Failure}
+
 import neko.chat.application.entity.{User, Email, RawPassword}
 import neko.chat.application.entity.User.UserName
 import neko.chat.application.repository.UserRepository
@@ -32,11 +34,12 @@ object CreateUser {
 
   sealed trait Error
   object Error {
-    sealed trait ValidateError      extends Error
-    case object UserNameTooLong     extends ValidateError
-    case object EmailWrongFormat    extends ValidateError
-    case object RawPasswordTooShort extends ValidateError
-    case object DuplicateEmail      extends Error
+    sealed trait ValidateError       extends Error
+    case object UserNameTooLong      extends ValidateError
+    case object EmailWrongFormat     extends ValidateError
+    case object RawPasswordTooShort  extends ValidateError
+    case object DuplicateEmail       extends Error
+    case class Unknown(e: Throwable) extends Error
   }
 }
 
@@ -50,8 +53,13 @@ class CreateUserImpl(
     for {
       t <- request.validate
       (userName, email, rawPassword) = (t._1, t._2, t._3)
-      user <- userRepository.saveNewUser(userName, email, rawPassword).left.map {
-        case e: UserRepository.UserNotExistOrDuplicateUserNameException => Error.DuplicateEmail
+      user <- userRepository.saveNewUser(userName, email, rawPassword) match {
+        case Failure(e) => Left(Error.Unknown(e))
+        case Success(v) =>
+          v match {
+            case Left(UserRepository.SaveNewUserError.DuplicateEmail(_)) => Left(Error.DuplicateEmail)
+            case Right(user)                                             => Right(user)
+          }
       }
     } yield user
   }

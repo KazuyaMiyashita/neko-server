@@ -1,24 +1,31 @@
 package neko.chat.application.repository
 
+import scala.util.Try
+
 import neko.chat.application.entity.{User, Email, RawPassword, HashedPassword}
 import neko.chat.application.entity.User.{UserId, UserName}
 
 trait UserRepository {
 
-  def saveNewUser(userName: UserName, email: Email, rawPassword: RawPassword): Either[Throwable, User]
+  import UserRepository._
+
+  def saveNewUser(userName: UserName, email: Email, rawPassword: RawPassword): Try[Either[SaveNewUserError, User]]
 
   def createHashedPassword(rawPassword: RawPassword): HashedPassword
 
-  def fetchUserIdBy(email: Email, rawPassword: RawPassword): Option[UserId]
+  def fetchUserIdBy(email: Email, rawPassword: RawPassword): Try[Option[UserId]]
 
-  def fetchBy(userId: UserId): Option[User]
+  def fetchBy(userId: UserId): Try[Option[User]]
 
-  def updateUserName(userId: UserId, newUserName: UserName): Unit
+  def updateUserName(userId: UserId, newUserName: UserName): Try[Unit]
 
 }
 
 object UserRepository {
 
-  class UserNotExistOrDuplicateUserNameException(e: Throwable) extends Exception(e)
+  sealed trait SaveNewUserError
+  object SaveNewUserError {
+    case class DuplicateEmail(e: Throwable) extends SaveNewUserError
+  }
 
 }

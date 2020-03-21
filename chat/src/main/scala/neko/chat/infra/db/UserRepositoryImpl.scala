@@ -9,12 +9,16 @@ import javax.crypto.{SecretKey, SecretKeyFactory}
 import javax.crypto.spec.PBEKeySpec
 import java.util.Base64
 
+import scala.util.Try
+
 import neko.core.jdbc.{ConnectionIO, DBPool}
 import neko.core.jdbc.query._
 
 import neko.chat.application.repository.UserRepository
 import neko.chat.application.entity.{User, Auth, Email, RawPassword, HashedPassword}
 import neko.chat.application.entity.User.{UserId, UserName}
+
+import com.mysql.cj.exceptions.MysqlErrorNumbers
 
 class UserRepositoryImpl(
     dbPool: DBPool,
@@ -28,50 +32,38 @@ class UserRepositoryImpl(
       userName: UserName,
       email: Email,
       rawPassword: RawPassword
-  ): Either[Throwable, User] = {
+  ): Try[Either[UserRepository.SaveNewUserError, User]] = {
     val user           = User(UserId(UUID.randomUUID()), userName, clock.instant())
     val hashedPassword = createHashedPassword(rawPassword)
     val auth           = Auth(email, hashedPassword, user.id)
-    val io = for {
+    val io: ConnectionIO[UserRepository.SaveNewUserError, User] = for {
       _ <- insertUserIO(user)
       _ <- insertAuthIO(auth)
-    } yield ()
-    io.runTx(dbPool.getConnection()).map(_ => user)
+    } yield user
+    io.runTx(dbPool.getConnection())
   }
 
   override def createHashedPassword(rawPassword: RawPassword): HashedPassword = {
     _createHashedPassword(rawPassword, applicationSecret)
   }
 
-  override def fetchUserIdBy(email: Email, rawPassword: RawPassword): Option[UserId] = {
+  override def fetchUserIdBy(email: Email, rawPassword: RawPassword): Try[Option[UserId]] = {
     val hashedPassword = createHashedPassword(rawPassword)
     selectUserIdFromAuthsIO(email, hashedPassword)
       .runReadOnly(dbPool.getConnection())
-      .left
-      .map { e: Throwable =>
-        throw e
-      }
-      .merge
+      .map(_.merge)
   }
 
-  override def fetchBy(userId: UserId): Option[User] = {
+  override def fetchBy(userId: UserId): Try[Option[User]] = {
     selectUserIO(userId)
       .runReadOnly(dbPool.getConnection())
-      .left
-      .map { e: Throwable =>
-        throw e
-      }
-      .merge
+      .map(_.merge)
   }
 
-  override def updateUserName(userId: UserId, newUserName: UserName): Unit = {
+  override def updateUserName(userId: UserId, newUserName: UserName): Try[Unit] = {
     updateUserNameIO(userId, newUserName)
       .runTx(dbPool.getConnection())
-      .left
-      .map { e: Throwable =>
-        throw e
-      }
-      .merge
+      .map(_.merge)
   }
 
 }
@@ -92,7 +84,7 @@ object UserRepositoryImpl {
     HashedPassword(value)
   }
 
-  def selectUserIO(userId: UserId): ConnectionIO[Option[User]] = ConnectionIO { conn =>
+  def selectUserIO(userId: UserId): ConnectionIO[Nothing, Option[User]] = ConnectionIO.right { conn =>
     val query = """select * from users where id = ?;"""
     val mapping: ResultSet => User = row =>
       User(
@@ -105,8 +97,8 @@ object UserRepositoryImpl {
     select(stmt, mapping)(conn)
   }
 
-  def selectUserIdFromAuthsIO(email: Email, hashedPassword: HashedPassword): ConnectionIO[Option[UserId]] =
-    ConnectionIO { conn =>
+  def selectUserIdFromAuthsIO(email: Email, hashedPassword: HashedPassword): ConnectionIO[Nothing, Option[UserId]] =
+    ConnectionIO.right { conn =>
       val query                        = "select user_id from auths where email = ? and hashed_password = ?;"
       val mapping: ResultSet => UserId = row => UserId(UUID.fromString(row.getString("user_id")))
       val stmt                         = conn.prepareStatement(query)
@@ -115,7 +107,7 @@ object UserRepositoryImpl {
       select(stmt, mapping)(conn)
     }
 
-  def insertUserIO(user: User): ConnectionIO[Unit] = ConnectionIO { conn =>
+  def insertUserIO(user: User): ConnectionIO[Nothing, Unit] = ConnectionIO.right { conn =>
     val query =
       """insert into users(id, name, created_at) values (?, ?, ?);"""
     val stmt = conn.prepareStatement(query)
@@ -126,29 +118,33 @@ object UserRepositoryImpl {
     ()
   }
 
-  def insertAuthIO(auth: Auth): ConnectionIO[Unit] = ConnectionIO { conn =>
-    val query = "insert into auths(email, hashed_password, user_id) values (?, ?, ?);"
-    val pstmt = conn.prepareStatement(query)
-    pstmt.setString(1, auth.email.value)
-    pstmt.setString(2, auth.hashedPassword.value)
-    pstmt.setString(3, auth.userId.asString)
-    try {
-      pstmt.executeUpdate()
-    } catch {
-      case e: SQLIntegrityConstraintViolationException =>
-        throw new UserRepository.UserNotExistOrDuplicateUserNameException(e) // emailの重複の時もこれになってしまっている
-    }
-    ()
+  def insertAuthIO(auth: Auth): ConnectionIO[UserRepository.SaveNewUserError, Unit] = {
+    ConnectionIO
+      .right { conn =>
+        val query = "insert into auths(email, hashed_password, user_id) values (?, ?, ?);"
+        val pstmt = conn.prepareStatement(query)
+        pstmt.setString(1, auth.email.value)
+        pstmt.setString(2, auth.hashedPassword.value)
+        pstmt.setString(3, auth.userId.asString)
+        pstmt.executeUpdate()
+        ()
+      }
+      .recover {
+        case e: SQLIntegrityConstraintViolationException if e.getErrorCode == MysqlErrorNumbers.ER_DUP_ENTRY =>
+          UserRepository.SaveNewUserError.DuplicateEmail(e)
+      }
+
   }
 
-  def updateUserNameIO(userId: UserId, newUserName: UserName): ConnectionIO[Unit] = ConnectionIO { conn =>
-    val query = "update users set name = ? where id = ?;"
-    val pstmt = conn.prepareStatement(query)
-    pstmt.setString(1, newUserName.value)
-    pstmt.setString(2, userId.asString)
-    val rows = pstmt.executeUpdate()
-    if (rows != 1) throw new RuntimeException
-    ()
+  def updateUserNameIO(userId: UserId, newUserName: UserName): ConnectionIO[Nothing, Unit] = ConnectionIO.right {
+    conn =>
+      val query = "update users set name = ? where id = ?;"
+      val pstmt = conn.prepareStatement(query)
+      pstmt.setString(1, newUserName.value)
+      pstmt.setString(2, userId.asString)
+      val rows = pstmt.executeUpdate()
+      if (rows != 1) throw new RuntimeException
+      ()
   }
 
 }

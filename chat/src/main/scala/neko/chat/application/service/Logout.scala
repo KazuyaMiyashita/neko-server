@@ -10,7 +10,7 @@ trait Logout {
 class LogoutImpl(tokenRepository: TokenRepository) extends Logout {
 
   def execute(token: Token): Boolean = {
-    tokenRepository.deleteToken(token)
+    tokenRepository.deleteToken(token).getOrElse(false)
   }
 
 }
