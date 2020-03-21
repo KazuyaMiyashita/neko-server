@@ -11,7 +11,6 @@ import neko.chat.application.entity.Message.{MessageId, MessageBody}
 import neko.chat.application.entity.User.{UserName, UserId}
 import neko.chat.application.service.{FetchUserIdByToken, GetMessages, PostMessage}
 import neko.chat.application.service.GetMessages.MessageResponse
-import neko.chat.application.service.PostMessage.PostMessageRequest
 
 import org.scalatest._
 
@@ -77,7 +76,7 @@ class MessageControllerSpec extends FlatSpec with Matchers {
       }
     }
     val stubPostMessage = new PostMessage {
-      override def execute(request: PostMessageRequest): Either[PostMessage.PostMessageError, Message] =
+      override def execute(request: PostMessage.Request): Either[PostMessage.Error, Message] =
         Right(
           Message(
             MessageId(UUID.randomUUID()),

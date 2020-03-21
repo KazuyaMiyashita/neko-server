@@ -5,7 +5,12 @@ case class RawPassword(value: String) {
 }
 
 object RawPassword {
-  def validate(value: String): Either[String, RawPassword] = {
-    Either.cond(value.length >= 8, RawPassword(value), "パスワードは8文字以上である必要があります")
+  def from(value: String): Either[Error, RawPassword] = {
+    Either.cond(value.length >= 8, RawPassword(value), Error.TooShort)
+  }
+
+  sealed trait Error
+  object Error {
+    case object TooShort extends Error
   }
 }

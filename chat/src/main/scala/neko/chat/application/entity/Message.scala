@@ -17,9 +17,14 @@ object Message {
   }
   case class MessageBody(value: String)
   object MessageBody {
-    def validate(body: String): Either[String, MessageBody] = {
+    def from(body: String): Either[Error, MessageBody] = {
       if (body.length > 0 && body.length <= 100) Right(MessageBody(body))
-      else Left("メッセージは100文字以下である必要があります")
+      else Left(Error.TooLong)
+    }
+
+    sealed trait Error
+    object Error {
+      case object TooLong extends Error
     }
   }
 

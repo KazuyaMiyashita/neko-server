@@ -18,7 +18,7 @@ class AuthControllerSpec extends FlatSpec with Matchers {
 
   "POST /auth/login" should "200" in {
     val stubLogin = new Login {
-      override def execute(request: Login.LoginRequest): Either[Login.LoginError, Token] =
+      override def execute(request: Login.Request): Either[Login.Error, Token] =
         Right(Token("stub-token-stub-token"))
     }
     val authController = new AuthController(

@@ -5,11 +5,11 @@ import neko.chat.application.entity.User.{UserId, UserName}
 
 trait UserRepository {
 
-  def saveNewUser(userName: UserName, email: Email, hashedPassword: HashedPassword): Either[Throwable, User]
+  def saveNewUser(userName: UserName, email: Email, rawPassword: RawPassword): Either[Throwable, User]
 
   def createHashedPassword(rawPassword: RawPassword): HashedPassword
 
-  def fetchUserIdBy(email: Email, hashedPassword: HashedPassword): Option[UserId]
+  def fetchUserIdBy(email: Email, rawPassword: RawPassword): Option[UserId]
 
   def fetchBy(userId: UserId): Option[User]
 

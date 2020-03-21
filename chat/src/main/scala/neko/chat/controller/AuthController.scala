@@ -6,7 +6,7 @@ import neko.core.http.{HttpStatus, OK, BAD_REQUEST, UNAUTHORIZED}
 import neko.chat.application.entity.Token
 import neko.chat.application.entity.User.UserId
 import neko.chat.application.service.{FetchUserIdByToken, Login, Logout}
-import neko.chat.application.service.Login.{LoginRequest, ValidateError, UserNotExist}
+import neko.chat.application.service.Login
 
 class AuthController(
     fetchUserIdByToken: FetchUserIdByToken,
@@ -33,8 +33,9 @@ class AuthController(
     val result = for {
       loginRequest <- parseJsonRequest(request, loginRequestDecoder)
       token <- login.execute(loginRequest).left.map {
-        case ValidateError(message) => HttpResponse(BAD_REQUEST, message)
-        case UserNotExist           => HttpResponse(UNAUTHORIZED, "メールアドレスかパスワードが間違っている")
+        case Login.Error.EmailWrongFormat    => HttpResponse(BAD_REQUEST, "メールアドレスの形式がおかしい")
+        case Login.Error.RawPasswordTooShort => HttpResponse(BAD_REQUEST, "パスワードは8文字以上である必要があります")
+        case Login.Error.UserNotExist        => HttpResponse(UNAUTHORIZED, "メールアドレスかパスワードが間違っている")
       }
     } yield {
       HttpResponse(OK)
@@ -78,12 +79,12 @@ object AuthController {
     override def encode(value: SessionResponse): JsValue = Json.obj("userId" -> Json.str(value.userId.asString))
   }
 
-  val loginRequestDecoder: JsonDecoder[LoginRequest] = new JsonDecoder[LoginRequest] {
-    override def decode(js: JsValue): Option[LoginRequest] = {
+  val loginRequestDecoder: JsonDecoder[Login.Request] = new JsonDecoder[Login.Request] {
+    override def decode(js: JsValue): Option[Login.Request] = {
       for {
         email       <- (js \ "email").as[String]
         rawPassword <- (js \ "password").as[String]
-      } yield LoginRequest(email, rawPassword)
+      } yield Login.Request(email, rawPassword)
     }
   }
 

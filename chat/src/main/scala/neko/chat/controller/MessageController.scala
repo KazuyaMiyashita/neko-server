@@ -11,7 +11,6 @@ import neko.core.http.HttpStatus
 import neko.chat.application.entity.Token
 import neko.chat.application.service.{FetchUserIdByToken, GetMessages, PostMessage}
 import neko.chat.application.service.GetMessages.MessageResponse
-import neko.chat.application.service.PostMessage.PostMessageRequest
 
 class MessageController(
     fetchUserIdByToken: FetchUserIdByToken,
@@ -34,7 +33,7 @@ class MessageController(
         .map(Token.apply)
         .toRight(HttpResponse(UNAUTHORIZED))
       userId <- fetchUserIdByToken.execute(token).toRight(HttpResponse(UNAUTHORIZED))
-      messages = postMessage.execute(PostMessageRequest(userId, postRequest.body))
+      messages = postMessage.execute(PostMessage.Request(userId, postRequest.body))
     } yield {
       HttpResponse(OK).withContentType("application/json")
     }

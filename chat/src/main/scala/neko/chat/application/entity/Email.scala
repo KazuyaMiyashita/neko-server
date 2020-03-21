@@ -5,8 +5,13 @@ case class Email(value: String)
 object Email {
 
   val re = "[^@]+@[^@]+".r
-  def validate(value: String): Either[String, Email] = {
-    Either.cond(re.matches(value), Email(value), "emailの形式がおかしい")
+  def from(value: String): Either[Error, Email] = {
+    Either.cond(re.matches(value), Email(value), Error.WrongFormat)
+  }
+
+  sealed trait Error
+  object Error {
+    case object WrongFormat extends Error
   }
 
 }

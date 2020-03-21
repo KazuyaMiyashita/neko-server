@@ -11,7 +11,6 @@ import neko.chat.application.entity.User.{UserId, UserName}
 
 import neko.chat.application.service.FetchUserIdByToken
 import neko.chat.application.service.{CreateUser, FetchUserIdByToken, EditUserInfo}
-import neko.chat.application.service.CreateUser.CreateUserRequest
 
 import neko.chat.ChatApplication
 
@@ -23,7 +22,7 @@ class UserControllerSpec extends FlatSpec with Matchers {
 
   "POST /users" should "200" in {
     val stubCreateUser = new CreateUser {
-      override def execute(request: CreateUserRequest): Either[CreateUser.CreateUserError, User] =
+      override def execute(request: CreateUser.Request): Either[CreateUser.Error, User] =
         Right(User(UserId(UUID.randomUUID()), UserName("Foo"), Instant.parse("2020-01-01T10:00:00.000Z")))
     }
     val userController = new UserController(fetchUserIdByToken = null, createUser = stubCreateUser, editUserInfo = null)
@@ -56,7 +55,7 @@ class UserControllerSpec extends FlatSpec with Matchers {
       }
     }
     val stubEditUserInfo = new EditUserInfo {
-      override def execute(userId: UserId, newUserNameStr: String): Either[EditUserInfo.EditUserInfoError, Unit] = {
+      override def execute(request: EditUserInfo.Request): Either[EditUserInfo.Error, Unit] = {
         Right(())
       }
     }

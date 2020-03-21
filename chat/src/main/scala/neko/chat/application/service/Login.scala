@@ -1,21 +1,36 @@
 package neko.chat.application.service
 
-import neko.chat.application.entity.{Email, Token, RawPassword, HashedPassword}
+import neko.chat.application.entity.{Email, Token, RawPassword}
 import neko.chat.application.repository.{UserRepository, TokenRepository}
 
 trait Login {
-  import Login._
-  def execute(request: LoginRequest): Either[LoginError, Token]
+  def execute(request: Login.Request): Either[Login.Error, Token]
 }
 
 object Login {
-  case class LoginRequest(
+  case class Request(
       email: String,
       rawPassword: String
-  )
-  sealed trait LoginError
-  case class ValidateError(asString: String) extends LoginError
-  object UserNotExist                        extends LoginError
+  ) {
+    def validate: Either[Error.ValidateError, (Email, RawPassword)] = {
+      for {
+        e <- Email.from(email).left.map {
+          case Email.Error.WrongFormat => Error.EmailWrongFormat
+        }
+        rp <- RawPassword.from(rawPassword).left.map {
+          case RawPassword.Error.TooShort => Error.RawPasswordTooShort
+        }
+      } yield (e, rp)
+    }
+  }
+
+  sealed trait Error
+  object Error {
+    sealed trait ValidateError      extends Error
+    case object EmailWrongFormat    extends ValidateError
+    case object RawPasswordTooShort extends ValidateError
+    case object UserNotExist        extends Error
+  }
 }
 
 class LoginImpl(
@@ -25,27 +40,15 @@ class LoginImpl(
 
   import Login._
 
-  def validate(request: LoginRequest): Either[ValidateError, (Email, HashedPassword)] = {
-    val e: Either[String, (Email, HashedPassword)] = for {
-      email <- Email.validate(request.email)
+  def execute(request: Request): Either[Error, Token] = {
+    for {
+      t <- request.validate
+      (email, rawPassword) = (t._1, t._2)
+      userId <- userRepository.fetchUserIdBy(email, rawPassword).toRight(Error.UserNotExist)
     } yield {
-      val hashedPassword = userRepository.createHashedPassword(RawPassword(request.rawPassword))
-      (email, hashedPassword)
-    }
-    e.left.map(ValidateError)
-  }
-
-  override def execute(request: LoginRequest): Either[LoginError, Token] = {
-    validate(request).flatMap {
-      case (email, hashedPassword) =>
-        userRepository
-          .fetchUserIdBy(email, hashedPassword)
-          .toRight(UserNotExist)
-          .map { userId =>
-            val token = tokenRepositoty.createToken(userId)
-            tokenRepositoty.saveToken(userId, token)
-            token
-          }
+      val token = tokenRepositoty.createToken(userId)
+      tokenRepositoty.saveToken(userId, token)
+      token
     }
   }
 

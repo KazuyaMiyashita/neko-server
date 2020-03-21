@@ -1,23 +1,43 @@
 package neko.chat.application.service
 
-import neko.chat.application.entity.{User, Email, RawPassword, HashedPassword}
+import neko.chat.application.entity.{User, Email, RawPassword}
 import neko.chat.application.entity.User.UserName
 import neko.chat.application.repository.UserRepository
 
 trait CreateUser {
   import CreateUser._
-  def execute(request: CreateUserRequest): Either[CreateUserError, User]
+  def execute(request: Request): Either[Error, User]
 }
 
 object CreateUser {
-  case class CreateUserRequest(
+  case class Request(
       userName: String,
       email: String,
       rawPassword: String
-  )
-  sealed trait CreateUserError
-  case class ValidateError(asString: String) extends CreateUserError
-  case class DuplicateEmail(e: Throwable)    extends CreateUserError
+  ) {
+    def validate: Either[Error.ValidateError, (UserName, Email, RawPassword)] = {
+      for {
+        un <- UserName.from(userName).left.map {
+          case UserName.Error.TooLong => Error.UserNameTooLong
+        }
+        e <- Email.from(email).left.map {
+          case Email.Error.WrongFormat => Error.EmailWrongFormat
+        }
+        rp <- RawPassword.from(rawPassword).left.map {
+          case RawPassword.Error.TooShort => Error.RawPasswordTooShort
+        }
+      } yield (un, e, rp)
+    }
+  }
+
+  sealed trait Error
+  object Error {
+    sealed trait ValidateError      extends Error
+    case object UserNameTooLong     extends ValidateError
+    case object EmailWrongFormat    extends ValidateError
+    case object RawPasswordTooShort extends ValidateError
+    case object DuplicateEmail      extends Error
+  }
 }
 
 class CreateUserImpl(
@@ -26,25 +46,14 @@ class CreateUserImpl(
 
   import CreateUser._
 
-  def validate(request: CreateUserRequest): Either[ValidateError, (UserName, Email, HashedPassword)] = {
-    val e: Either[String, (UserName, Email, HashedPassword)] = for {
-      userName    <- UserName.validate(request.userName)
-      email       <- Email.validate(request.email)
-      rawPassword <- RawPassword.validate(request.rawPassword)
-    } yield {
-      val hashedPassword = userRepository.createHashedPassword(rawPassword)
-      (userName, email, hashedPassword)
-    }
-    e.left.map(ValidateError)
-  }
-
-  override def execute(request: CreateUserRequest): Either[CreateUserError, User] = {
-    validate(request).flatMap {
-      case (userName, email, hashedPassword) =>
-        userRepository.saveNewUser(userName, email, hashedPassword).left.map {
-          case e: UserRepository.UserNotExistOrDuplicateUserNameException => DuplicateEmail(e)
-        }
-    }
+  override def execute(request: Request): Either[Error, User] = {
+    for {
+      t <- request.validate
+      (userName, email, rawPassword) = (t._1, t._2, t._3)
+      user <- userRepository.saveNewUser(userName, email, rawPassword).left.map {
+        case e: UserRepository.UserNotExistOrDuplicateUserNameException => Error.DuplicateEmail
+      }
+    } yield user
   }
 
 }

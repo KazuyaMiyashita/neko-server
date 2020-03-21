@@ -27,10 +27,11 @@ class UserRepositoryImpl(
   override def saveNewUser(
       userName: UserName,
       email: Email,
-      hashedPassword: HashedPassword
+      rawPassword: RawPassword
   ): Either[Throwable, User] = {
-    val user = User(UserId(UUID.randomUUID()), userName, clock.instant())
-    val auth = Auth(email, hashedPassword, user.id)
+    val user           = User(UserId(UUID.randomUUID()), userName, clock.instant())
+    val hashedPassword = createHashedPassword(rawPassword)
+    val auth           = Auth(email, hashedPassword, user.id)
     val io = for {
       _ <- insertUserIO(user)
       _ <- insertAuthIO(auth)
@@ -42,7 +43,8 @@ class UserRepositoryImpl(
     _createHashedPassword(rawPassword, applicationSecret)
   }
 
-  override def fetchUserIdBy(email: Email, hashedPassword: HashedPassword): Option[UserId] = {
+  override def fetchUserIdBy(email: Email, rawPassword: RawPassword): Option[UserId] = {
+    val hashedPassword = createHashedPassword(rawPassword)
     selectUserIdFromAuthsIO(email, hashedPassword)
       .runReadOnly(dbPool.getConnection())
       .left
