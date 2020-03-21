@@ -12,6 +12,7 @@ case class ConnectionIO[+E, T](private val run: Connection => Try[Either[E, T]])
       case Right(v) => f(v).run(c)
     }
   }
+  def leftMap[EE](f: E => EE): ConnectionIO[EE, T] = ConnectionIO(run andThen (t => t.map(e => e.left.map(f))))
   def recover[EE >: E](pf: PartialFunction[Throwable, EE]): ConnectionIO[EE, T] = ConnectionIO { c =>
     run(c) match {
       case Failure(e) if pf.isDefinedAt(e) => Success(Left(pf(e)))
