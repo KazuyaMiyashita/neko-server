@@ -1,7 +1,7 @@
 package neko.chat.controller
 
 import neko.core.http.{HttpRequest, HttpResponse}
-import neko.core.http.{HttpStatus, OK, BAD_REQUEST, CONFLICT, UNAUTHORIZED}
+import neko.core.http.{HttpStatus, OK, BAD_REQUEST, CONFLICT, UNAUTHORIZED, INTERNAL_SERVER_ERROR}
 import neko.core.json.{Json, JsValue, JsonDecoder, JsonEncoder}
 
 import neko.chat.application.entity.Token
@@ -25,6 +25,10 @@ class UserController(
         case CreateUser.Error.EmailWrongFormat    => HttpResponse(BAD_REQUEST, "メールアドレスの形式がおかしい")
         case CreateUser.Error.RawPasswordTooShort => HttpResponse(BAD_REQUEST, "パスワードは8文字以上である必要があります")
         case CreateUser.Error.DuplicateEmail      => HttpResponse(CONFLICT, "メールアドレスが既に登録されています")
+        case CreateUser.Error.Unknown(e)          => {
+          println(e)
+          HttpResponse(INTERNAL_SERVER_ERROR)
+        }
       }
     } yield HttpResponse(OK)
     result.merge
