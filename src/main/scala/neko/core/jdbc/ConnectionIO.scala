@@ -5,18 +5,18 @@ import scala.util.{Try, Success, Failure}
 import scala.util.chaining._
 
 case class ConnectionIO[+E, T](private val run: Connection => Try[Either[E, T]]) {
-  def map[U](f: T => U): ConnectionIO[E, U] = ConnectionIO(run andThen (t => t.map(e => e.map(f))))
+  def map[U](f: T => U): ConnectionIO[E, U] = ConnectionIO(run.andThen(t => t.map(e => e.map(f))))
   def flatMap[EE >: E, U](f: T => ConnectionIO[EE, U]): ConnectionIO[EE, U] = ConnectionIO { c =>
     run(c).flatMap {
       case Left(v)  => Success(Left(v))
       case Right(v) => f(v).run(c)
     }
   }
-  def leftMap[EE](f: E => EE): ConnectionIO[EE, T] = ConnectionIO(run andThen (t => t.map(e => e.left.map(f))))
+  def leftMap[EE](f: E => EE): ConnectionIO[EE, T] = ConnectionIO(run.andThen(t => t.map(e => e.left.map(f))))
   def recover[EE >: E](pf: PartialFunction[Throwable, EE]): ConnectionIO[EE, T] = ConnectionIO { c =>
     run(c) match {
       case Failure(e) if pf.isDefinedAt(e) => Success(Left(pf(e)))
-      case a                               => a
+      case others                          => others
     }
   }
 
