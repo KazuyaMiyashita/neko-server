@@ -18,37 +18,36 @@ object CreateUser {
       rawPassword: String
   ) {
     def validate: Either[Error.ValidateErrors, (UserName, Email, RawPassword)] = {
-      val _un = UserName.from(userName).left.map {
-        case UserName.Error.TooLong => Error.UserNameTooLong
+      val _un: Either[ValidateError, UserName] = UserName.from(userName).left.map {
+        case UserName.Error.TooLong => ValidateError.UserNameTooLong
       }
-      val _e = Email.from(email).left.map {
-        case Email.Error.WrongFormat => Error.EmailWrongFormat
+      val _e: Either[ValidateError, Email] = Email.from(email).left.map {
+        case Email.Error.WrongFormat => ValidateError.EmailWrongFormat
       }
-      val _rp = RawPassword.from(rawPassword).left.map {
-        case RawPassword.Error.TooShort => Error.RawPasswordTooShort
+      val _rp: Either[ValidateError, RawPassword] = RawPassword.from(rawPassword).left.map {
+        case RawPassword.Error.TooShort => ValidateError.RawPasswordTooShort
       }
-      val a = List(_un, _e, _rp).foldLeft(List.empty[Error.ValidateError]) { case (acc, a) =>
-        a match {
-          case Left(e) => e :: acc
-          case _ => acc
-        }
-      }
-      a match {
-        case Nil => Right((_un.right.get, _e.right.get, _rp.right.get))
-        case errs => Left(Error.ValidateErrors(errs))
+      (_un, _e, _rp) match {
+        case (Right(un), Right(e), Right(rp)) => Right((un, e, rp))
+        case (un, e, rp) =>
+          Left(Error.ValidateErrors(List(un, e, rp).collect {
+            case Left(v) => v
+          }: _*))
       }
     }
   }
 
+  sealed trait ValidateError
+  object ValidateError {
+    case object UserNameTooLong     extends ValidateError
+    case object EmailWrongFormat    extends ValidateError
+    case object RawPasswordTooShort extends ValidateError
+  }
   sealed trait Error
   object Error {
-    sealed trait ValidateError
-    case object UserNameTooLong      extends ValidateError
-    case object EmailWrongFormat     extends ValidateError
-    case object RawPasswordTooShort  extends ValidateError
-    case class ValidateErrors(errors: List[ValidateError]) extends Error
-    case object DuplicateEmail       extends Error
-    case class Unknown(e: Throwable) extends Error
+    case class ValidateErrors(errors: ValidateError*) extends Error
+    case object DuplicateEmail                        extends Error
+    case class Unknown(e: Throwable)                  extends Error
   }
 }
 

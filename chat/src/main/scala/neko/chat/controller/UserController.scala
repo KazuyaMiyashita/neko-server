@@ -21,11 +21,10 @@ class UserController(
     val result: Either[HttpResponse, HttpResponse] = for {
       createUserRequest <- parseJsonRequest(request, createUserRequestDecoder)
       _ <- createUser.execute(createUserRequest).left.map {
-        case CreateUser.Error.UserNameTooLong     => HttpResponse(BAD_REQUEST, "ユーザー名は20文字以下である必要があります")
-        case CreateUser.Error.EmailWrongFormat    => HttpResponse(BAD_REQUEST, "メールアドレスの形式がおかしい")
-        case CreateUser.Error.RawPasswordTooShort => HttpResponse(BAD_REQUEST, "パスワードは8文字以上である必要があります")
-        case CreateUser.Error.DuplicateEmail      => HttpResponse(CONFLICT, "メールアドレスが既に登録されています")
-        case CreateUser.Error.Unknown(e)          => {
+        case errors: CreateUser.Error.ValidateErrors =>
+          createJsonResponse(BAD_REQUEST, errors)(createUserValidateErrorsEncoder)
+        case CreateUser.Error.DuplicateEmail => HttpResponse(CONFLICT, "メールアドレスが既に登録されています")
+        case CreateUser.Error.Unknown(e) => {
           println(e)
           HttpResponse(INTERNAL_SERVER_ERROR)
         }
@@ -74,6 +73,21 @@ object UserController {
       } yield CreateUser.Request(name, loginName, rawPassword)
     }
   }
+
+  val createUserValidateErrorsEncoder: JsonEncoder[CreateUser.Error.ValidateErrors] =
+    new JsonEncoder[CreateUser.Error.ValidateErrors] {
+      override def encode(value: CreateUser.Error.ValidateErrors): JsValue = {
+        Json.obj(
+          "errors" -> Json.obj(
+            value.errors.map {
+              case CreateUser.ValidateError.UserNameTooLong     => "name"     -> Json.str("ユーザー名は20文字以下である必要があります")
+              case CreateUser.ValidateError.EmailWrongFormat    => "email"    -> Json.str("メールアドレスの形式がおかしい")
+              case CreateUser.ValidateError.RawPasswordTooShort => "password" -> Json.str("パスワードは8文字以上である必要があります")
+            }: _*
+          )
+        )
+      }
+    }
 
   val nameDecoder: JsonDecoder[String] = new JsonDecoder[String] {
     override def decode(js: JsValue): Option[String] = {
