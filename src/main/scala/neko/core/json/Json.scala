@@ -9,11 +9,9 @@ object Json {
   def arr(value: JsValue*)           = JsArray(value.toVector)
   val nul                            = JsNull
 
-  def parse(input: String): Option[JsValue] = JsonParser(input)
-  def format(value: JsValue): String        = JsonFormatter.spaces2(value)
-
+  def parse(input: String): Option[JsValue]                               = JsonParser.parse(input)
+  def format(value: JsValue): String                                      = JsonFormatter.format(value)
   def decode[T](js: JsValue)(implicit decoder: JsonDecoder[T]): Option[T] = decoder.decode(js)
-
-  def encode[T](value: T)(implicit encoder: JsonEncoder[T]): JsValue = encoder.encode(value)
+  def encode[T](value: T)(implicit encoder: JsonEncoder[T]): JsValue      = encoder.encode(value)
 
 }

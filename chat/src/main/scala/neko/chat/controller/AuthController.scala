@@ -2,7 +2,7 @@ package neko.chat.controller
 
 import neko.core.http.{HttpRequest, HttpResponse}
 import neko.core.json.{Json, JsValue, JsonDecoder, JsonEncoder}
-import neko.core.http.{HttpStatus, OK, BAD_REQUEST, UNAUTHORIZED}
+import neko.core.http.{HttpStatus, OK, BAD_REQUEST, UNAUTHORIZED, INTERNAL_SERVER_ERROR}
 import neko.chat.application.entity.Token
 import neko.chat.application.entity.User.UserId
 import neko.chat.application.service.{FetchUserIdByToken, Login, Logout}
@@ -36,6 +36,10 @@ class AuthController(
         case Login.Error.EmailWrongFormat    => HttpResponse(BAD_REQUEST, "メールアドレスの形式がおかしい")
         case Login.Error.RawPasswordTooShort => HttpResponse(BAD_REQUEST, "パスワードは8文字以上である必要があります")
         case Login.Error.UserNotExist        => HttpResponse(UNAUTHORIZED, "メールアドレスかパスワードが間違っている")
+        case Login.Error.Unknown(e) => {
+          println(e)
+          HttpResponse(INTERNAL_SERVER_ERROR)
+        }
       }
     } yield {
       HttpResponse(OK)

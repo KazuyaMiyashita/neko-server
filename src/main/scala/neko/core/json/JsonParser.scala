@@ -4,10 +4,9 @@ import scala.util.parsing.combinator._
 
 object JsonParser extends JavaTokenParsers {
 
-  def apply(input: String): Option[JsValue] = parseAll(value, input) match {
-    case Success(result, next) => Some(result)
-    case Failure(_, _)         => None
-    case Error(_, _)           => None
+  def parse(input: String): Option[JsValue] = parseAll(value, input) match {
+    case Success(result, _) => Some(result)
+    case _                  => None
   }
 
   lazy val value: Parser[JsValue] = (

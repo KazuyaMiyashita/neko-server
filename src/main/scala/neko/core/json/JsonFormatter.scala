@@ -2,7 +2,7 @@ package neko.core.json
 
 object JsonFormatter {
 
-  def spaces2(js: JsValue): String = {
+  def format(js: JsValue): String = {
     def proc(js: JsValue, indent: Int): String = js match {
       case JsString(value)  => "\"" + value + "\""
       case JsNumber(value)  => if (value == value.toLong) "%d".format(value.toLong) else "%f".format(value)

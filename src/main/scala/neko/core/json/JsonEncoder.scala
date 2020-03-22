@@ -41,4 +41,9 @@ object JsonEncoder {
     override def encode(value: None.type): JsValue = JsNull
   }
 
+  implicit def mapEncoder[U: JsonEncoder] = new JsonEncoder[Map[String, U]] {
+    override def encode(value: Map[String, U]): JsValue =
+      JsObject(value.map { case (str, js) => str -> Json.encode(js) })
+  }
+
 }

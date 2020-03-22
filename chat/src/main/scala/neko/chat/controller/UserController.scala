@@ -74,19 +74,16 @@ object UserController {
     }
   }
 
-  val createUserValidateErrorsEncoder: JsonEncoder[CreateUser.Error.ValidateErrors] = {
-    new JsonEncoder[CreateUser.Error.ValidateErrors] {
-      override def encode(value: CreateUser.Error.ValidateErrors): JsValue = {
-        Json.obj(
-          "errors" -> Json.obj(
-            value.errors.map {
-              case CreateUser.ValidateError.UserNameTooLong     => "name"     -> Json.str("ユーザー名は20文字以下である必要があります")
-              case CreateUser.ValidateError.EmailWrongFormat    => "email"    -> Json.str("メールアドレスの形式がおかしい")
-              case CreateUser.ValidateError.RawPasswordTooShort => "password" -> Json.str("パスワードは8文字以上である必要があります")
-            }: _*
-          )
-        )
-      }
+  val createUserValidateErrorsEncoder: JsonEncoder[CreateUser.Error.ValidateErrors] = new JsonEncoder[CreateUser.Error.ValidateErrors] {
+    def errorsToMap(value: CreateUser.Error.ValidateErrors): Map[String, String] = {
+      value.errors.map {
+        case CreateUser.ValidateError.UserNameTooLong     => "name"     -> "ユーザー名は20文字以下である必要があります"
+        case CreateUser.ValidateError.EmailWrongFormat    => "email"    -> "メールアドレスの形式がおかしい"
+        case CreateUser.ValidateError.RawPasswordTooShort => "password" -> "パスワードは8文字以上である必要があります"
+      }.toMap
+    }
+    override def encode(value: CreateUser.Error.ValidateErrors): JsValue = {
+      Json.obj("errors" -> Json.encode(errorsToMap(value)))
     }
   }
 
