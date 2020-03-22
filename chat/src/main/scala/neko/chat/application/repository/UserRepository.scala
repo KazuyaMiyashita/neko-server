@@ -7,9 +7,11 @@ import neko.chat.application.entity.User.{UserId, UserName}
 
 trait UserRepository {
 
-  import UserRepository._
-
-  def saveNewUser(userName: UserName, email: Email, rawPassword: RawPassword): Try[Either[SaveNewUserError, User]]
+  def saveNewUser(
+      userName: UserName,
+      email: Email,
+      rawPassword: RawPassword
+  ): Try[Either[UserRepository.SaveNewUserError, User]]
 
   def createHashedPassword(rawPassword: RawPassword): HashedPassword
 

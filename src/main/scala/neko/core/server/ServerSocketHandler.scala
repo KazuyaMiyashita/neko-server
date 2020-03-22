@@ -7,10 +7,11 @@ import java.util.concurrent.Executors
 import java.net.SocketException
 
 class ServerSocketHandler(
-    requestHandler: RequestHandler
+    requestHandler: RequestHandler,
+    port: Int
 ) extends Thread {
 
-  val server: ServerSocket                   = new ServerSocket(2200)
+  val server: ServerSocket                   = new ServerSocket(port)
   val socketExecutorService: ExecutorService = Executors.newFixedThreadPool(32)
   val socketTerminator                       = new SocketTerminator
 

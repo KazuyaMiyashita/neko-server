@@ -74,7 +74,7 @@ object UserController {
     }
   }
 
-  val createUserValidateErrorsEncoder: JsonEncoder[CreateUser.Error.ValidateErrors] =
+  val createUserValidateErrorsEncoder: JsonEncoder[CreateUser.Error.ValidateErrors] = {
     new JsonEncoder[CreateUser.Error.ValidateErrors] {
       override def encode(value: CreateUser.Error.ValidateErrors): JsValue = {
         Json.obj(
@@ -88,6 +88,7 @@ object UserController {
         )
       }
     }
+  }
 
   val nameDecoder: JsonDecoder[String] = new JsonDecoder[String] {
     override def decode(js: JsValue): Option[String] = {

@@ -59,11 +59,9 @@ object Main extends App {
   val application: HttpApplication   = new ChatApplication(userController, authController, messageController)
   val requestHandler: RequestHandler = new HttpRequestHandler(application)
 
-  val serverSocketHandler = new ServerSocketHandler(
-    requestHandler
-  )
+  val serverSocketHandler = new ServerSocketHandler(requestHandler, config.server.port)
 
-  new Thread(serverSocketHandler).start()
+  serverSocketHandler.start()
 
   println("press enter to terminate")
   io.StdIn.readLine()

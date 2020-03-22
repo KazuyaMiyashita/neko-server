@@ -7,8 +7,7 @@ import neko.chat.application.entity.User.UserName
 import neko.chat.application.repository.UserRepository
 
 trait CreateUser {
-  import CreateUser._
-  def execute(request: Request): Either[Error, User]
+  def execute(request: CreateUser.Request): Either[CreateUser.Error, User]
 }
 
 object CreateUser {

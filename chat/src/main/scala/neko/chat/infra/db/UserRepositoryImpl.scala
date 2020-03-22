@@ -133,7 +133,6 @@ object UserRepositoryImpl {
         case e: SQLIntegrityConstraintViolationException if e.getErrorCode == MysqlErrorNumbers.ER_DUP_ENTRY =>
           UserRepository.SaveNewUserError.DuplicateEmail(e)
       }
-
   }
 
   def updateUserNameIO(userId: UserId, newUserName: UserName): ConnectionIO[Nothing, Unit] = ConnectionIO.right {
