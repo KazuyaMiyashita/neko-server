@@ -6,7 +6,7 @@ import java.time.Clock
 import neko.core.jdbc.DBPool
 import java.sql.{DriverManager, Connection}
 import neko.chat.application.repository.{MessageRepository, TokenRepository, UserRepository}
-import neko.chat.application.service.{
+import neko.chat.application.usecase.{
   CreateUser,
   CreateUserImpl,
   EditUserInfo,

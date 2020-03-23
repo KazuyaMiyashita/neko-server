@@ -1,4 +1,4 @@
-package neko.chat.application.service
+package neko.chat.application.usecase
 
 import scala.util.{Success, Failure}
 

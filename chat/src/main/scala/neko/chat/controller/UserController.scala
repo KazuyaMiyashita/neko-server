@@ -5,9 +5,7 @@ import neko.core.http.{HttpStatus, OK, BAD_REQUEST, CONFLICT, UNAUTHORIZED, INTE
 import neko.core.json.{Json, JsValue, JsonDecoder, JsonEncoder}
 
 import neko.chat.application.entity.Token
-import neko.chat.application.service.{FetchUserIdByToken, CreateUser, EditUserInfo}
-import neko.chat.application.service.CreateUser
-import neko.chat.application.service.EditUserInfo
+import neko.chat.application.usecase.{FetchUserIdByToken, CreateUser, EditUserInfo}
 
 class UserController(
     fetchUserIdByToken: FetchUserIdByToken,

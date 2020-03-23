@@ -9,8 +9,7 @@ import neko.core.http.{POST, PUT}
 import neko.chat.application.entity.{User, Token}
 import neko.chat.application.entity.User.{UserId, UserName}
 
-import neko.chat.application.service.FetchUserIdByToken
-import neko.chat.application.service.{CreateUser, FetchUserIdByToken, EditUserInfo}
+import neko.chat.application.usecase.{CreateUser, FetchUserIdByToken, EditUserInfo}
 
 import neko.chat.ChatApplication
 

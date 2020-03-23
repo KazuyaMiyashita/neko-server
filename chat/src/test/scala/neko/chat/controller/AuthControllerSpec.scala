@@ -6,7 +6,7 @@ import neko.chat.ChatApplication
 import neko.core.http.{HttpRequest, HttpRequestLine, HttpMethod, HttpRequestHeader, HttpRequestBody, OK}
 import neko.core.http.{GET, POST}
 
-import neko.chat.application.service.{FetchUserIdByToken, Login, Logout}
+import neko.chat.application.usecase.{FetchUserIdByToken, Login, Logout}
 import neko.chat.application.entity.Token
 import neko.chat.application.entity.User.UserId
 

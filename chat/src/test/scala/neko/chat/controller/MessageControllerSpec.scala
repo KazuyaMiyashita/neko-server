@@ -9,8 +9,7 @@ import neko.core.http.{GET, POST}
 import neko.chat.application.entity.{Message, Token}
 import neko.chat.application.entity.Message.{MessageId, MessageBody}
 import neko.chat.application.entity.User.{UserName, UserId}
-import neko.chat.application.service.{FetchUserIdByToken, GetMessages, PostMessage}
-import neko.chat.application.service.GetMessages.MessageResponse
+import neko.chat.application.usecase.{FetchUserIdByToken, GetMessages, PostMessage}
 
 import org.scalatest._
 
@@ -22,16 +21,16 @@ class MessageControllerSpec extends FlatSpec with Matchers {
 
   "GET /messages" should "200" in {
     val stubGetMessages = new GetMessages {
-      override def latest50messages(): Either[GetMessages.Error, List[MessageResponse]] =
+      override def latest50messages(): Either[GetMessages.Error, List[GetMessages.MessageResponse]] =
         Right(
           List(
-            MessageResponse(
+            GetMessages.MessageResponse(
               MessageId(UUID.fromString("64c9fa7e-93f9-483d-9508-25e582736882")),
               MessageBody("Hello2"),
               UserName("Bar"),
               Instant.parse("2020-01-02T00:00:00.000Z")
             ),
-            MessageResponse(
+            GetMessages.MessageResponse(
               MessageId(UUID.fromString("53247465-de8c-47e8-ae01-d46d04db5dc2")),
               MessageBody("Hello"),
               UserName("Foo"),

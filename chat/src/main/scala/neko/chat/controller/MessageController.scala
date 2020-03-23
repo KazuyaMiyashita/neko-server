@@ -9,8 +9,7 @@ import neko.core.json.JsValue
 import neko.core.http.HttpStatus
 
 import neko.chat.application.entity.Token
-import neko.chat.application.service.{FetchUserIdByToken, GetMessages, PostMessage}
-import neko.chat.application.service.GetMessages.MessageResponse
+import neko.chat.application.usecase.{FetchUserIdByToken, GetMessages, PostMessage}
 
 class MessageController(
     fetchUserIdByToken: FetchUserIdByToken,
@@ -62,14 +61,15 @@ object MessageController {
       .toRight(HttpResponse(BAD_REQUEST, "json parse error"))
   }
 
-  implicit val messageResponseEncoder: JsonEncoder[MessageResponse] = new JsonEncoder[MessageResponse] {
-    override def encode(message: MessageResponse): JsValue = Json.obj(
-      "id"        -> Json.str(message.id.asString),
-      "body"      -> Json.str(message.body.value),
-      "userName"  -> Json.str(message.userName.value),
-      "createdAt" -> Json.num(message.createdAt.toEpochMilli)
-    )
-  }
+  implicit val messageResponseEncoder: JsonEncoder[GetMessages.MessageResponse] =
+    new JsonEncoder[GetMessages.MessageResponse] {
+      override def encode(message: GetMessages.MessageResponse): JsValue = Json.obj(
+        "id"        -> Json.str(message.id.asString),
+        "body"      -> Json.str(message.body.value),
+        "userName"  -> Json.str(message.userName.value),
+        "createdAt" -> Json.num(message.createdAt.toEpochMilli)
+      )
+    }
 
   case class PostRequest(body: String)
   val postRequestDecoder: JsonDecoder[PostRequest] = new JsonDecoder[PostRequest] {

@@ -1,4 +1,4 @@
-package neko.chat.application.service
+package neko.chat.application.usecase
 
 import neko.chat.application.entity.{Message, User}
 import neko.chat.application.repository.MessageRepository
