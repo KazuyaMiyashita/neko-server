@@ -1,7 +1,6 @@
 package neko.core.server
 
-import java.net.Socket
-import java.net.SocketException
+import java.net.{Socket, SocketException}
 
 class SocketHandler(
     socket: Socket,

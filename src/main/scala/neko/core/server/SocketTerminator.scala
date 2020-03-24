@@ -5,13 +5,17 @@ import java.net.Socket
 
 class SocketTerminator {
 
-  private val _sockets = mutable.Set.empty[Socket]
-  private def sockets  = synchronized(_sockets)
+  private val sockets = mutable.Set.empty[Socket]
 
-  def register(s: Socket): Unit = sockets.add(s)
-  def release(s: Socket): Unit  = sockets.remove(s)
+  def register(s: Socket): Unit = synchronized {
+    sockets.add(s)
+  }
 
-  def terminateAll(): Unit = {
+  def release(s: Socket): Unit = synchronized {
+    sockets.remove(s)
+  }
+
+  def terminateAll(): Unit = synchronized {
     sockets.foreach(_.close())
     sockets.clear()
   }

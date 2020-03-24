@@ -1,10 +1,7 @@
 package neko.core.server
 
-import java.net.ServerSocket
-import java.net.Socket
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.net.SocketException
+import java.net.{ServerSocket, Socket, SocketException}
+import java.util.concurrent.{ExecutorService, Executors}
 
 class ServerSocketHandler(
     requestHandler: RequestHandler,
