@@ -10,7 +10,6 @@ class SocketHandler(
 
   override def run(): Unit = {
     try {
-      socketTerminator.register(socket)
       requestHandler.handle(socket)
     } catch {
       case _: SocketException => println("socket closed")
