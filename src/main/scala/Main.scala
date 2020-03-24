@@ -1,6 +1,14 @@
+import neko.core.server.ServerSocketHandler
+
 object Main extends App {
 
-  println("sbt:neko-server> project chat")
-  println("sbt:neko-server-chat> run")
+  val requestHandler      = new TelnetRequestHandler
+  val serverSocketHandler = new ServerSocketHandler(requestHandler, 23)
+  serverSocketHandler.start()
+
+  println("press enter to terminate")
+  io.StdIn.readLine()
+  println("closing...")
+  serverSocketHandler.terminate()
 
 }
