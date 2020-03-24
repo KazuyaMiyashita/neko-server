@@ -9,7 +9,12 @@ case class HttpRequest(
 ) {
 
   def asString: String = {
-    List(line.asString, header.asString, "", body.asString).mkString("\n")
+    List(line.asString, header.asString, "", bodyAsString).mkString("\n")
+  }
+
+  def bodyAsString: String = body.bytes match {
+    case Some(bs) => new String(bs, header.charset.getOrElse("UTF-8"))
+    case None     => ""
   }
 
 }

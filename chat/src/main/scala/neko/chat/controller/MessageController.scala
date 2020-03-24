@@ -56,7 +56,7 @@ object MessageController {
 
   def parseJsonRequest[T](request: HttpRequest, decoder: JsonDecoder[T]): Either[HttpResponse, T] = {
     Json
-      .parse(request.body.asString)
+      .parse(request.bodyAsString)
       .flatMap(decoder.decode)
       .toRight(HttpResponse(BAD_REQUEST, "json parse error"))
   }
