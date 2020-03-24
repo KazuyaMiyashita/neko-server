@@ -10,7 +10,7 @@ object HttpMethod {
     case "POST"    => POST
     case "PUT"     => PUT
     case "OPTIONS" => OPTIONS
-    case _         => _UNKNOWN
+    case _         => throw new NoSuchElementException
   }
 }
 object GET extends HttpMethod {
@@ -24,7 +24,4 @@ object PUT extends HttpMethod {
 }
 object OPTIONS extends HttpMethod {
   override def asString = "OPTIONS"
-}
-object _UNKNOWN extends HttpMethod {
-  override def asString = "UNKNOWN"
 }

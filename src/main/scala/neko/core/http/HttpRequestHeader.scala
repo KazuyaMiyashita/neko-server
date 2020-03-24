@@ -7,19 +7,18 @@ case class HttpRequestHeader(
   val fields: Map[String, Seq[String]] =
     lines
       .map { line =>
-        val Array(key, value) = line.split(": ", 2)
-        key -> value
+        val Array(key, value) = line.split(":", 2)
+        key.toLowerCase -> value.trim
       }
       .groupBy(_._1)
       .view
       .mapValues(_.map(_._2))
       .toMap
 
-  // TODO: text/plain;charset=UTF-8 とかの;区切りに対応する
-  def contentLength: Option[Int]  = fields.get("Content-Length").flatMap(_.headOption).map(_.toInt)
-  def contentType: Option[String] = fields.get("Content-Type").flatMap(_.headOption)
+  def contentLength: Option[Int]  = fields.get("content-length").flatMap(_.headOption).map(_.toInt)
+  def contentType: Option[String] = fields.get("content-type").flatMap(_.headOption)
   def cookies: Map[String, String] = {
-    val list: Seq[String] = fields.get("Cookie").getOrElse(Seq.empty)
+    val list: Seq[String] = fields.get("cookie").getOrElse(Seq.empty)
     list
       .flatMap(_.split(";"))
       .map(_.trim)
