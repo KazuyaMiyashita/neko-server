@@ -3,13 +3,21 @@ package neko.chat.controller
 import java.util.UUID
 import java.time.Instant
 
-import neko.core.http.{HttpRequest, HttpRequestLine, HttpMethod, HttpRequestHeader, HttpRequestBody, OK, BAD_REQUEST}
-import neko.core.http.{POST, PUT}
+import neko.core.http.{
+  HttpRequest,
+  HttpRequestLine,
+  HttpMethod,
+  HttpRequestHeader,
+  HttpRequestBody,
+  POST,
+  OK,
+  BAD_REQUEST
+}
 
-import neko.chat.application.entity.{User, Token}
+import neko.chat.application.entity.User
 import neko.chat.application.entity.User.{UserId, UserName}
 
-import neko.chat.application.usecase.{CreateUser, FetchUserIdByToken, EditUserInfo}
+import neko.chat.application.usecase.CreateUser
 
 import org.scalatest._
 
@@ -26,9 +34,7 @@ class UserControllerSpec extends FlatSpec with Matchers {
     }
     val userController =
       new UserController(
-        fetchUserIdByToken = null,
         createUser = stubCreateUser,
-        editUserInfo = null,
         controllerConponent
       )
     val chatApplication = new Routing(
@@ -61,9 +67,7 @@ class UserControllerSpec extends FlatSpec with Matchers {
     }
     val userController =
       new UserController(
-        fetchUserIdByToken = null,
         createUser = stubCreateUser,
-        editUserInfo = null,
         controllerConponent
       )
     val chatApplication = new Routing(
@@ -104,9 +108,7 @@ class UserControllerSpec extends FlatSpec with Matchers {
     }
     val userController =
       new UserController(
-        fetchUserIdByToken = null,
         createUser = stubCreateUser,
-        editUserInfo = null,
         controllerConponent
       )
     val chatApplication = new Routing(
@@ -138,44 +140,6 @@ class UserControllerSpec extends FlatSpec with Matchers {
         |    "password": "パスワードは8文字以上である必要があります"
         |  }
         |}""".stripMargin
-  }
-
-  "POST /edit" should "200" in {
-    val stubFetchUserIdByToken = new FetchUserIdByToken(null) {
-      override def execute(token: Token): Option[UserId] = {
-        Some(UserId(UUID.randomUUID()))
-      }
-    }
-    val stubEditUserInfo = new EditUserInfo(null) {
-      override def execute(request: EditUserInfo.Request): Either[EditUserInfo.Error, Unit] = {
-        Right(())
-      }
-    }
-    val userController = new UserController(
-      fetchUserIdByToken = stubFetchUserIdByToken,
-      createUser = null,
-      editUserInfo = stubEditUserInfo,
-      controllerConponent
-    )
-    val chatApplication = new Routing(
-      userController = userController,
-      authController = null,
-      messageController = null,
-      controllerConponent
-    )
-
-    val request = buildJsonRequest(
-      method = PUT,
-      url = "/users",
-      headers = "Cookie: token=dummy-token-dummy-token" :: Nil,
-      body = """{
-                |  "name": "Bar"
-                |}""".stripMargin
-    )
-
-    val response = chatApplication.handle(request)
-
-    response.status shouldEqual OK
   }
 
 }

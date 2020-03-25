@@ -60,12 +60,6 @@ class UserRepositoryImpl(
       .map(_.merge)
   }
 
-  override def updateUserName(userId: UserId, newUserName: UserName): Try[Unit] = {
-    updateUserNameIO(userId, newUserName)
-      .runTx(dbPool.getConnection())
-      .map(_.merge)
-  }
-
 }
 
 object UserRepositoryImpl {
@@ -135,17 +129,6 @@ object UserRepositoryImpl {
         case e: SQLIntegrityConstraintViolationException if e.getErrorCode == MysqlErrorNumbers.ER_DUP_ENTRY =>
           UserRepository.SaveNewUserError.DuplicateEmail(e)
       }
-  }
-
-  def updateUserNameIO(userId: UserId, newUserName: UserName): ConnectionIO[Nothing, Unit] = ConnectionIO.right {
-    conn =>
-      val query = "update users set name = ? where id = ?;"
-      val pstmt = conn.prepareStatement(query)
-      pstmt.setString(1, newUserName.value)
-      pstmt.setString(2, userId.value)
-      val rows = pstmt.executeUpdate()
-      if (rows != 1) throw new RuntimeException
-      ()
   }
 
 }

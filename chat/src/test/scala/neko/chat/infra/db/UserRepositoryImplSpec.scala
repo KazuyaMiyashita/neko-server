@@ -121,31 +121,4 @@ class UserRepositoryImplSpec extends FunSuite with Matchers {
     result.get.swap.getOrElse(throw new Exception) shouldBe a[UserRepository.SaveNewUserError.DuplicateEmail]
   }
 
-  test("特定のuserのnameを変更出来る") {
-    val userIds = List(
-      UserId(UUID.fromString("53247465-de8c-47e8-ae01-d46d04db5dc2")),
-      UserId(UUID.fromString("64c9fa7e-93f9-483d-9508-25e582736882")),
-      UserId(UUID.fromString("1f7c110f-2ef7-4f81-b99f-04f54f4b3f7e")),
-      UserId(UUID.fromString("dfce2026-5e2e-42a3-a41e-0b9bc68927d1")),
-      UserId(UUID.fromString("9a602bf7-611a-41c2-9e5f-aa3805d06fdc"))
-    )
-    val now = Instant.parse("2020-01-01T10:00:00.000Z")
-
-    val users                           = userIds.map(userId => User(userId, UserName("Foo"), now))
-    val targetUser                      = users(3)
-    val updatedUserName                 = UserName("Bar")
-    val updatedUser                     = targetUser.copy(name = updatedUserName)
-    val updatedUsers: Seq[Option[User]] = users.updated(3, updatedUser).map(Some(_))
-
-    val io: ConnectionIO[Nothing, Seq[Option[User]]] = for {
-      _        <- ConnectionIO.sequence(users.map(user => UserRepositoryImpl.insertUserIO(user)))
-      _        <- UserRepositoryImpl.updateUserNameIO(targetUser.id, updatedUserName)
-      userOpts <- ConnectionIO.sequence(users.map(user => UserRepositoryImpl.selectUserIO(user.id)))
-    } yield userOpts
-
-    val result: Try[Either[Nothing, Seq[Option[User]]]] = io.runRollback(conn())
-
-    result shouldEqual Success(Right(updatedUsers))
-  }
-
 }

@@ -19,8 +19,6 @@ trait UserRepository {
 
   def fetchBy(userId: UserId): Try[Option[User]]
 
-  def updateUserName(userId: UserId, newUserName: UserName): Try[Unit]
-
 }
 
 object UserRepository {

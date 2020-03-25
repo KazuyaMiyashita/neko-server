@@ -3,13 +3,10 @@ package neko.chat.controller
 import neko.core.http._
 import neko.core.json._
 
-import neko.chat.application.entity.Token
-import neko.chat.application.usecase.{FetchUserIdByToken, CreateUser, EditUserInfo}
+import neko.chat.application.usecase.CreateUser
 
 class UserController(
-    fetchUserIdByToken: FetchUserIdByToken,
     createUser: CreateUser,
-    editUserInfo: EditUserInfo,
     cc: ControllerComponent
 ) {
 
@@ -26,21 +23,6 @@ class UserController(
           println(e)
           cc.responseBuilder.build(INTERNAL_SERVER_ERROR)
         }
-      }
-    } yield cc.responseBuilder.build(OK)
-    result.merge
-  }
-
-  def edit(request: HttpRequest): HttpResponse = {
-    val result: Either[HttpResponse, HttpResponse] = for {
-      token <- request.header.cookies
-        .get("token")
-        .map(Token.apply)
-        .toRight(cc.responseBuilder.build(UNAUTHORIZED))
-      newUserName <- parseJsonRequest(request, nameDecoder)
-      userId      <- fetchUserIdByToken.execute(token).toRight(cc.responseBuilder.build(UNAUTHORIZED))
-      _ <- editUserInfo.execute(EditUserInfo.Request(userId, newUserName)).left.map {
-        case EditUserInfo.Error.UserNameTooLong => cc.responseBuilder.build(BAD_REQUEST, "ユーザー名は20文字以下である必要があります")
       }
     } yield cc.responseBuilder.build(OK)
     result.merge
@@ -89,12 +71,6 @@ object UserController {
         }
         JsObject(Map("errors" -> JsonEncoder.encode(errorsMap)))
       }
-    }
-  }
-
-  val nameDecoder: JsonDecoder[String] = new JsonDecoder[String] {
-    override def decode(js: JsValue): Option[String] = {
-      (js \ "name").as[String]
     }
   }
 
