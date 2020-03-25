@@ -6,8 +6,22 @@ import neko.chat.application.entity.{User, Email, RawPassword}
 import neko.chat.application.entity.User.UserName
 import neko.chat.application.repository.UserRepository
 
-trait CreateUser {
-  def execute(request: CreateUser.Request): Either[CreateUser.Error, User]
+class CreateUser(userRepository: UserRepository) {
+  def execute(request: CreateUser.Request): Either[CreateUser.Error, User] = {
+    for {
+      t <- request.validate
+      (userName, email, rawPassword) = (t._1, t._2, t._3)
+      user <- userRepository.saveNewUser(userName, email, rawPassword) match {
+        case Failure(e) => Left(CreateUser.Error.Unknown(e))
+        case Success(v) =>
+          v match {
+            case Left(UserRepository.SaveNewUserError.DuplicateEmail(_)) => Left(CreateUser.Error.DuplicateEmail)
+            case Right(user)                                             => Right(user)
+          }
+      }
+    } yield user
+  }
+
 }
 
 object CreateUser {
@@ -48,25 +62,4 @@ object CreateUser {
     case object DuplicateEmail                        extends Error
     case class Unknown(e: Throwable)                  extends Error
   }
-}
-
-class CreateUserImpl(
-    userRepository: UserRepository
-) extends CreateUser {
-
-  override def execute(request: CreateUser.Request): Either[CreateUser.Error, User] = {
-    for {
-      t <- request.validate
-      (userName, email, rawPassword) = (t._1, t._2, t._3)
-      user <- userRepository.saveNewUser(userName, email, rawPassword) match {
-        case Failure(e) => Left(CreateUser.Error.Unknown(e))
-        case Success(v) =>
-          v match {
-            case Left(UserRepository.SaveNewUserError.DuplicateEmail(_)) => Left(CreateUser.Error.DuplicateEmail)
-            case Right(user)                                             => Right(user)
-          }
-      }
-    } yield user
-  }
-
 }

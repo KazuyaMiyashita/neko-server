@@ -1,6 +1,6 @@
 package neko.core.http
 
-case class HttpResponse (
+case class HttpResponse(
     status: HttpStatus,
     headers: Map[String, String],
     body: Option[String]

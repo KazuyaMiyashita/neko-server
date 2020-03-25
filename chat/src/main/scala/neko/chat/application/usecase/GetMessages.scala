@@ -6,9 +6,20 @@ import java.time.Instant
 import scala.util.Failure
 import scala.util.Success
 
-trait GetMessages {
-  import GetMessages._
-  def latest50messages(): Either[Error, List[MessageResponse]]
+class GetMessages(messageRepository: MessageRepository) {
+
+  def latest50messages(): Either[GetMessages.Error, List[GetMessages.MessageResponse]] = {
+    messageRepository.fetchLatest50messages() match {
+      case Failure(e) => Left(GetMessages.Error.Unknown(e))
+      case Success(vs) => {
+        Right(vs.map { v =>
+          val MessageRepository.MessageResponse(message, user) = v
+          GetMessages.MessageResponse(message.id, message.body, user.name, message.createdAt)
+        })
+      }
+    }
+  }
+
 }
 
 object GetMessages {
@@ -23,22 +34,4 @@ object GetMessages {
       userName: User.UserName,
       createdAt: Instant
   )
-}
-
-class GetMessagesImpl(messageRepository: MessageRepository) extends GetMessages {
-
-  import GetMessages._
-
-  override def latest50messages(): Either[Error, List[MessageResponse]] = {
-    messageRepository.fetchLatest50messages() match {
-      case Failure(e) => Left(Error.Unknown(e))
-      case Success(vs) => {
-        Right(vs.map { v =>
-          val MessageRepository.MessageResponse(message, user) = v
-          MessageResponse(message.id, message.body, user.name, message.createdAt)
-        })
-      }
-    }
-  }
-
 }

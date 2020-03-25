@@ -3,8 +3,15 @@ package neko.chat.application.usecase
 import neko.chat.application.entity.User.{UserId, UserName}
 import neko.chat.application.repository.UserRepository
 
-trait EditUserInfo {
-  def execute(request: EditUserInfo.Request): Either[EditUserInfo.Error, Unit]
+class EditUserInfo(userRepository: UserRepository) {
+  def execute(request: EditUserInfo.Request): Either[EditUserInfo.Error, Unit] = {
+    for {
+      newUserName <- request.validate
+    } yield {
+      userRepository.updateUserName(request.userId, newUserName)
+      ()
+    }
+  }
 }
 
 object EditUserInfo {
@@ -26,19 +33,4 @@ object EditUserInfo {
     sealed trait ValidateError  extends Error
     case object UserNameTooLong extends ValidateError
   }
-}
-
-class EditUserInfoImpl(
-    userRepository: UserRepository
-) extends EditUserInfo {
-
-  override def execute(request: EditUserInfo.Request): Either[EditUserInfo.Error, Unit] = {
-    for {
-      newUserName <- request.validate
-    } yield {
-      userRepository.updateUserName(request.userId, newUserName)
-      ()
-    }
-  }
-
 }

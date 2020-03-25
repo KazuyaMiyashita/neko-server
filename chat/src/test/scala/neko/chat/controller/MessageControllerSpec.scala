@@ -20,7 +20,7 @@ class MessageControllerSpec extends FlatSpec with Matchers {
   import MessageControllerSpec._
 
   "GET /messages" should "200" in {
-    val stubGetMessages = new GetMessages {
+    val stubGetMessages = new GetMessages(null) {
       override def latest50messages(): Either[GetMessages.Error, List[GetMessages.MessageResponse]] =
         Right(
           List(
@@ -72,12 +72,12 @@ class MessageControllerSpec extends FlatSpec with Matchers {
   }
 
   "POST /messages" should "200" in {
-    val stubFetchUserIdByToken = new FetchUserIdByToken {
+    val stubFetchUserIdByToken = new FetchUserIdByToken(null) {
       override def execute(token: Token): Option[UserId] = {
         Some(UserId(UUID.randomUUID()))
       }
     }
-    val stubPostMessage = new PostMessage {
+    val stubPostMessage = new PostMessage(null) {
       override def execute(request: PostMessage.Request): Either[PostMessage.Error, Message] =
         Right(
           Message(

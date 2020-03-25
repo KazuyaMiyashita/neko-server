@@ -8,19 +8,12 @@ import java.sql.{DriverManager, Connection}
 import neko.chat.application.repository.{MessageRepository, TokenRepository, UserRepository}
 import neko.chat.application.usecase.{
   CreateUser,
-  CreateUserImpl,
   EditUserInfo,
-  EditUserInfoImpl,
   FetchUserIdByToken,
-  FetchUserIdByTokenImpl,
   GetMessages,
-  GetMessagesImpl,
   Login,
-  LoginImpl,
   Logout,
-  LogoutImpl,
-  PostMessage,
-  PostMessageImpl
+  PostMessage
 }
 import neko.chat.infra.db.{MessageRepositoryImpl, TokenRepositoryImpl, UserRepositoryImpl}
 import neko.chat.controller.{AuthController, UserController, MessageController}
@@ -44,13 +37,13 @@ object Main extends App {
   val tokenRepository: TokenRepository     = new TokenRepositoryImpl(dbPool, clock, config.applicationSecret)
   val userRepository: UserRepository       = new UserRepositoryImpl(dbPool, clock, config.applicationSecret)
 
-  val createUser: CreateUser                 = new CreateUserImpl(userRepository)
-  val editUserInfo: EditUserInfo             = new EditUserInfoImpl(userRepository)
-  val fetchUserIdByToken: FetchUserIdByToken = new FetchUserIdByTokenImpl(tokenRepository)
-  val getMessages: GetMessages               = new GetMessagesImpl(messageRepository)
-  val login: Login                           = new LoginImpl(userRepository, tokenRepository)
-  val logout: Logout                         = new LogoutImpl(tokenRepository)
-  val postMessage: PostMessage               = new PostMessageImpl(messageRepository)
+  val createUser         = new CreateUser(userRepository)
+  val editUserInfo       = new EditUserInfo(userRepository)
+  val fetchUserIdByToken = new FetchUserIdByToken(tokenRepository)
+  val getMessages        = new GetMessages(messageRepository)
+  val login              = new Login(userRepository, tokenRepository)
+  val logout             = new Logout(tokenRepository)
+  val postMessage        = new PostMessage(messageRepository)
 
   val authController    = new AuthController(fetchUserIdByToken, login, logout)
   val messageController = new MessageController(fetchUserIdByToken, getMessages, postMessage)

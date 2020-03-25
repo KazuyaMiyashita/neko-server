@@ -5,8 +5,30 @@ import scala.util.{Success, Failure}
 import neko.chat.application.entity.{Email, Token, RawPassword}
 import neko.chat.application.repository.{UserRepository, TokenRepository}
 
-trait Login {
-  def execute(request: Login.Request): Either[Login.Error, Token]
+class Login(
+    userRepository: UserRepository,
+    tokenRepositoty: TokenRepository
+) {
+
+  def execute(request: Login.Request): Either[Login.Error, Token] = {
+    for {
+      t <- request.validate
+      (email, rawPassword) = (t._1, t._2)
+      userId <- userRepository.fetchUserIdBy(email, rawPassword) match {
+        case Failure(e) => Left(Login.Error.Unknown(e))
+        case Success(v) =>
+          v match {
+            case None         => Left(Login.Error.UserNotExist)
+            case Some(userId) => Right(userId)
+          }
+      }
+    } yield {
+      val token = tokenRepositoty.createToken(userId)
+      tokenRepositoty.saveToken(userId, token)
+      token
+    }
+  }
+
 }
 
 object Login {
@@ -34,32 +56,4 @@ object Login {
     case object UserNotExist         extends Error
     case class Unknown(e: Throwable) extends Error
   }
-}
-
-class LoginImpl(
-    userRepository: UserRepository,
-    tokenRepositoty: TokenRepository
-) extends Login {
-
-  import Login._
-
-  def execute(request: Request): Either[Error, Token] = {
-    for {
-      t <- request.validate
-      (email, rawPassword) = (t._1, t._2)
-      userId <- userRepository.fetchUserIdBy(email, rawPassword) match {
-        case Failure(e) => Left(Error.Unknown(e))
-        case Success(v) =>
-          v match {
-            case None         => Left(Error.UserNotExist)
-            case Some(userId) => Right(userId)
-          }
-      }
-    } yield {
-      val token = tokenRepositoty.createToken(userId)
-      tokenRepositoty.saveToken(userId, token)
-      token
-    }
-  }
-
 }

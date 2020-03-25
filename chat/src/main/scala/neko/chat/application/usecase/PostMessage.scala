@@ -5,8 +5,18 @@ import neko.chat.application.entity.Message
 import neko.chat.application.entity.Message.MessageBody
 import neko.chat.application.repository.MessageRepository
 
-trait PostMessage {
-  def execute(request: PostMessage.Request): Either[PostMessage.Error, Message]
+class PostMessage(messageRepository: MessageRepository) {
+
+  def execute(request: PostMessage.Request): Either[PostMessage.Error, Message] = {
+    for {
+      messageBody <- request.validate
+    } yield {
+      val message = messageRepository.createMessageEntity(request.userId, messageBody)
+      messageRepository.saveMessage(message)
+      message
+    }
+  }
+
 }
 
 object PostMessage {
@@ -28,18 +38,4 @@ object PostMessage {
     sealed trait ValidateError     extends Error
     case object MessageBodyTooLong extends ValidateError
   }
-}
-
-class PostMessageImpl(messageRepository: MessageRepository) extends PostMessage {
-
-  def execute(request: PostMessage.Request): Either[PostMessage.Error, Message] = {
-    for {
-      messageBody <- request.validate
-    } yield {
-      val message = messageRepository.createMessageEntity(request.userId, messageBody)
-      messageRepository.saveMessage(message)
-      message
-    }
-  }
-
 }
