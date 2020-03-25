@@ -12,12 +12,12 @@ case class Message(
 
 object Message {
 
-  case class MessageId(value: UUID) {
-    def asString: String = value.toString
+  case class MessageId(uuid: UUID) {
+    def value: String = uuid.toString
   }
   case class MessageBody(value: String)
   object MessageBody {
-    def from(body: String): Either[Error, MessageBody] = {
+    def of(body: String): Either[Error, MessageBody] = {
       if (body.length > 0 && body.length <= 100) Right(MessageBody(body))
       else Left(Error.TooLong)
     }

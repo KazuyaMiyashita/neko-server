@@ -11,8 +11,8 @@ case class User(
 
 object User {
 
-  case class UserId(value: UUID) {
-    def asString: String = value.toString
+  case class UserId(uuid: UUID) {
+    def value: String = uuid.toString
   }
 
   case class UserName(value: String)

@@ -69,7 +69,7 @@ object TokenRepositoryImpl {
         """insert into tokens(token, user_id, expires_at) values (?, ?, ?);"""
       val pstmt = conn.prepareStatement(query)
       pstmt.setString(1, token.value)
-      pstmt.setString(2, userId.asString)
+      pstmt.setString(2, userId.value)
       pstmt.setTimestamp(3, Timestamp.from(now.plusSeconds(60 * 60 * 24)))
       pstmt.executeUpdate()
   }

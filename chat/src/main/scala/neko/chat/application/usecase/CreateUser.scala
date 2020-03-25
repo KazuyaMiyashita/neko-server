@@ -34,10 +34,10 @@ object CreateUser {
       val _un: Either[ValidateError, UserName] = UserName.from(userName).left.map {
         case UserName.Error.TooLong => ValidateError.UserNameTooLong
       }
-      val _e: Either[ValidateError, Email] = Email.from(email).left.map {
+      val _e: Either[ValidateError, Email] = Email.of(email).left.map {
         case Email.Error.WrongFormat => ValidateError.EmailWrongFormat
       }
-      val _rp: Either[ValidateError, RawPassword] = RawPassword.from(rawPassword).left.map {
+      val _rp: Either[ValidateError, RawPassword] = RawPassword.of(rawPassword).left.map {
         case RawPassword.Error.TooShort => ValidateError.RawPasswordTooShort
       }
       (_un, _e, _rp) match {

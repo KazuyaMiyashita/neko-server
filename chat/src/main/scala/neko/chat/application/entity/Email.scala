@@ -5,7 +5,7 @@ case class Email(value: String)
 object Email {
 
   val re = "[^@]+@[^@]+".r
-  def from(value: String): Either[Error, Email] = {
+  def of(value: String): Either[Error, Email] = {
     Either.cond(re.matches(value), Email(value), Error.WrongFormat)
   }
 

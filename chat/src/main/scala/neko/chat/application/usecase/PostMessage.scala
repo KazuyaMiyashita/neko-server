@@ -26,7 +26,7 @@ object PostMessage {
   ) {
     def validate: Either[Error.ValidateError, MessageBody] = {
       for {
-        b <- MessageBody.from(body).left.map {
+        b <- MessageBody.of(body).left.map {
           case MessageBody.Error.TooLong => Error.MessageBodyTooLong
         }
       } yield b

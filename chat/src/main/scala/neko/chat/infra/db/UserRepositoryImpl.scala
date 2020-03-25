@@ -93,7 +93,7 @@ object UserRepositoryImpl {
         createdAt = row.getTimestamp("created_at").toInstant
       )
     val stmt = conn.prepareStatement(query)
-    stmt.setString(1, userId.asString)
+    stmt.setString(1, userId.value)
     select(stmt, mapping)(conn)
   }
 
@@ -111,7 +111,7 @@ object UserRepositoryImpl {
     val query =
       """insert into users(id, name, created_at) values (?, ?, ?);"""
     val stmt = conn.prepareStatement(query)
-    stmt.setString(1, user.id.asString)
+    stmt.setString(1, user.id.value)
     stmt.setString(2, user.name.value)
     stmt.setTimestamp(3, Timestamp.from(user.createdAt))
     stmt.executeUpdate()
@@ -125,7 +125,7 @@ object UserRepositoryImpl {
         val pstmt = conn.prepareStatement(query)
         pstmt.setString(1, auth.email.value)
         pstmt.setString(2, auth.hashedPassword.value)
-        pstmt.setString(3, auth.userId.asString)
+        pstmt.setString(3, auth.userId.value)
         pstmt.executeUpdate()
         ()
       }
@@ -140,7 +140,7 @@ object UserRepositoryImpl {
       val query = "update users set name = ? where id = ?;"
       val pstmt = conn.prepareStatement(query)
       pstmt.setString(1, newUserName.value)
-      pstmt.setString(2, userId.asString)
+      pstmt.setString(2, userId.value)
       val rows = pstmt.executeUpdate()
       if (rows != 1) throw new RuntimeException
       ()

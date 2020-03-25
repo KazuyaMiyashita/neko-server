@@ -88,7 +88,7 @@ object AuthController {
 
   case class SessionResponse(userId: UserId)
   implicit val sessionResponseEncoder: JsonEncoder[SessionResponse] = new JsonEncoder[SessionResponse] {
-    override def encode(value: SessionResponse): JsValue = Json.obj("userId" -> Json.str(value.userId.asString))
+    override def encode(response: SessionResponse): JsValue = Json.obj("userId" -> Json.str(response.userId.value))
   }
 
   val loginRequestDecoder: JsonDecoder[Login.Request] = new JsonDecoder[Login.Request] {

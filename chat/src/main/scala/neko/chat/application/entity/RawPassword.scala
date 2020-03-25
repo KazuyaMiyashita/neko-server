@@ -5,7 +5,7 @@ case class RawPassword(value: String) {
 }
 
 object RawPassword {
-  def from(value: String): Either[Error, RawPassword] = {
+  def of(value: String): Either[Error, RawPassword] = {
     Either.cond(value.length >= 8, RawPassword(value), Error.TooShort)
   }
 

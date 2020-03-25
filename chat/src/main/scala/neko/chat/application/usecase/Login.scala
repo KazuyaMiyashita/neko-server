@@ -38,10 +38,10 @@ object Login {
   ) {
     def validate: Either[Error.ValidateError, (Email, RawPassword)] = {
       for {
-        e <- Email.from(email).left.map {
+        e <- Email.of(email).left.map {
           case Email.Error.WrongFormat => Error.EmailWrongFormat
         }
-        rp <- RawPassword.from(rawPassword).left.map {
+        rp <- RawPassword.of(rawPassword).left.map {
           case RawPassword.Error.TooShort => Error.RawPasswordTooShort
         }
       } yield (e, rp)

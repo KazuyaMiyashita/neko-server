@@ -70,7 +70,7 @@ object MessageController {
   implicit val messageResponseEncoder: JsonEncoder[GetMessages.MessageResponse] =
     new JsonEncoder[GetMessages.MessageResponse] {
       override def encode(message: GetMessages.MessageResponse): JsValue = Json.obj(
-        "id"        -> Json.str(message.id.asString),
+        "id"        -> Json.str(message.id.value),
         "body"      -> Json.str(message.body.value),
         "userName"  -> Json.str(message.userName.value),
         "createdAt" -> Json.num(message.createdAt.toEpochMilli)
