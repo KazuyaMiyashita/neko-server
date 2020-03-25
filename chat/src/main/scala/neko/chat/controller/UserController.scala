@@ -1,19 +1,17 @@
 package neko.chat.controller
 
-import neko.core.http.{HttpRequest, HttpResponse, HttpResponseBuilder}
+import neko.core.http.{HttpRequest, HttpResponse}
 import neko.core.http.{HttpStatus, OK, BAD_REQUEST, CONFLICT, UNAUTHORIZED, INTERNAL_SERVER_ERROR}
 import neko.core.json.{Json, JsValue, JsonDecoder, JsonEncoder}
 
 import neko.chat.application.entity.Token
 import neko.chat.application.usecase.{FetchUserIdByToken, CreateUser, EditUserInfo}
 
-import neko.core.http.HttpResponseBuilder
-
 class UserController(
     fetchUserIdByToken: FetchUserIdByToken,
     createUser: CreateUser,
     editUserInfo: EditUserInfo,
-    response: HttpResponseBuilder
+    cc: ControllerComponent
 ) {
 
   import UserController._
@@ -24,13 +22,13 @@ class UserController(
       _ <- createUser.execute(createUserRequest).left.map {
         case errors: CreateUser.Error.ValidateErrors =>
           createJsonResponse(BAD_REQUEST, errors)(createUserValidateErrorsEncoder)
-        case CreateUser.Error.DuplicateEmail => response.build(CONFLICT, "メールアドレスが既に登録されています")
+        case CreateUser.Error.DuplicateEmail => cc.responseBuilder.build(CONFLICT, "メールアドレスが既に登録されています")
         case CreateUser.Error.Unknown(e) => {
           println(e)
-          response.build(INTERNAL_SERVER_ERROR)
+          cc.responseBuilder.build(INTERNAL_SERVER_ERROR)
         }
       }
-    } yield response.build(OK)
+    } yield cc.responseBuilder.build(OK)
     result.merge
   }
 
@@ -39,18 +37,18 @@ class UserController(
       token <- request.header.cookies
         .get("token")
         .map(Token.apply)
-        .toRight(response.build(UNAUTHORIZED))
+        .toRight(cc.responseBuilder.build(UNAUTHORIZED))
       newUserName <- parseJsonRequest(request, nameDecoder)
-      userId      <- fetchUserIdByToken.execute(token).toRight(response.build(UNAUTHORIZED))
+      userId      <- fetchUserIdByToken.execute(token).toRight(cc.responseBuilder.build(UNAUTHORIZED))
       _ <- editUserInfo.execute(EditUserInfo.Request(userId, newUserName)).left.map {
-        case EditUserInfo.Error.UserNameTooLong => response.build(BAD_REQUEST, "ユーザー名は20文字以下である必要があります")
+        case EditUserInfo.Error.UserNameTooLong => cc.responseBuilder.build(BAD_REQUEST, "ユーザー名は20文字以下である必要があります")
       }
-    } yield response.build(OK)
+    } yield cc.responseBuilder.build(OK)
     result.merge
   }
 
   private def createJsonResponse[T](status: HttpStatus, result: T)(implicit encoder: JsonEncoder[T]): HttpResponse = {
-    response
+    cc.responseBuilder
       .withContentType("application/json")
       .build(
         status = status,
@@ -59,7 +57,7 @@ class UserController(
   }
 
   private def parseJsonRequest[T](request: HttpRequest, decoder: JsonDecoder[T]): Either[HttpResponse, T] = {
-    val badRequest = response.build(BAD_REQUEST, "json parse error")
+    val badRequest = cc.responseBuilder.build(BAD_REQUEST, "json parse error")
     Json
       .parse(request.bodyAsString)
       .flatMap(decoder.decode)

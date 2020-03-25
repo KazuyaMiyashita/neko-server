@@ -6,15 +6,10 @@ import java.time.Instant
 import neko.core.http.{HttpRequest, HttpRequestLine, HttpMethod, HttpRequestHeader, HttpRequestBody, OK, BAD_REQUEST}
 import neko.core.http.{POST, PUT}
 
-import neko.core.http.HttpResponseBuilder
-import neko.chat.controller.common.HttpResponseBuilderFactory
-
 import neko.chat.application.entity.{User, Token}
 import neko.chat.application.entity.User.{UserId, UserName}
 
 import neko.chat.application.usecase.{CreateUser, FetchUserIdByToken, EditUserInfo}
-
-import neko.chat.ChatApplication
 
 import org.scalatest._
 
@@ -22,7 +17,7 @@ class UserControllerSpec extends FlatSpec with Matchers {
 
   import UserControllerSpec._
 
-  val responseBuilder: HttpResponseBuilder = new HttpResponseBuilderFactory("http://localhost:8000").responseBuilder
+  val controllerConponent: ControllerComponent = ControllerComponent.create("http://localhost:8000")
 
   "POST /users" should "200" in {
     val stubCreateUser = new CreateUser(null) {
@@ -30,12 +25,17 @@ class UserControllerSpec extends FlatSpec with Matchers {
         Right(User(UserId(UUID.randomUUID()), UserName("Foo"), Instant.parse("2020-01-01T10:00:00.000Z")))
     }
     val userController =
-      new UserController(fetchUserIdByToken = null, createUser = stubCreateUser, editUserInfo = null, responseBuilder)
-    val chatApplication = new ChatApplication(
+      new UserController(
+        fetchUserIdByToken = null,
+        createUser = stubCreateUser,
+        editUserInfo = null,
+        controllerConponent
+      )
+    val chatApplication = new Routing(
       userController = userController,
       authController = null,
       messageController = null,
-      responseBuilder
+      controllerConponent
     )
 
     val request = buildJsonRequest(
@@ -60,12 +60,17 @@ class UserControllerSpec extends FlatSpec with Matchers {
         Left(CreateUser.Error.ValidateErrors(CreateUser.ValidateError.UserNameTooLong))
     }
     val userController =
-      new UserController(fetchUserIdByToken = null, createUser = stubCreateUser, editUserInfo = null, responseBuilder)
-    val chatApplication = new ChatApplication(
+      new UserController(
+        fetchUserIdByToken = null,
+        createUser = stubCreateUser,
+        editUserInfo = null,
+        controllerConponent
+      )
+    val chatApplication = new Routing(
       userController = userController,
       authController = null,
       messageController = null,
-      responseBuilder
+      controllerConponent
     )
 
     val request = buildJsonRequest(
@@ -98,12 +103,17 @@ class UserControllerSpec extends FlatSpec with Matchers {
         Left(CreateUser.Error.ValidateErrors(UserNameTooLong, EmailWrongFormat, RawPasswordTooShort))
     }
     val userController =
-      new UserController(fetchUserIdByToken = null, createUser = stubCreateUser, editUserInfo = null, responseBuilder)
-    val chatApplication = new ChatApplication(
+      new UserController(
+        fetchUserIdByToken = null,
+        createUser = stubCreateUser,
+        editUserInfo = null,
+        controllerConponent
+      )
+    val chatApplication = new Routing(
       userController = userController,
       authController = null,
       messageController = null,
-      responseBuilder
+      controllerConponent
     )
 
     val request = buildJsonRequest(
@@ -145,13 +155,13 @@ class UserControllerSpec extends FlatSpec with Matchers {
       fetchUserIdByToken = stubFetchUserIdByToken,
       createUser = null,
       editUserInfo = stubEditUserInfo,
-      responseBuilder
+      controllerConponent
     )
-    val chatApplication = new ChatApplication(
+    val chatApplication = new Routing(
       userController = userController,
       authController = null,
       messageController = null,
-      responseBuilder
+      controllerConponent
     )
 
     val request = buildJsonRequest(

@@ -17,8 +17,7 @@ import neko.chat.application.usecase.{
   PostMessage
 }
 import neko.chat.infra.db.{MessageRepositoryImpl, TokenRepositoryImpl, UserRepositoryImpl}
-import neko.chat.controller.{AuthController, UserController, MessageController}
-import neko.chat.controller.common.HttpResponseBuilderFactory
+import neko.chat.controller.{ControllerComponent, Routing, AuthController, UserController, MessageController}
 
 object Main extends App {
 
@@ -38,7 +37,6 @@ object Main extends App {
   val messageRepository: MessageRepository = new MessageRepositoryImpl(dbPool, clock)
   val tokenRepository: TokenRepository     = new TokenRepositoryImpl(dbPool, clock, config.applicationSecret)
   val userRepository: UserRepository       = new UserRepositoryImpl(dbPool, clock, config.applicationSecret)
-  val responseBuilder: HttpResponseBuilder = new HttpResponseBuilderFactory(config.server.origin).responseBuilder
 
   val createUser         = new CreateUser(userRepository)
   val editUserInfo       = new EditUserInfo(userRepository)
@@ -48,12 +46,12 @@ object Main extends App {
   val logout             = new Logout(tokenRepository)
   val postMessage        = new PostMessage(messageRepository)
 
-  val authController    = new AuthController(fetchUserIdByToken, login, logout, responseBuilder)
-  val messageController = new MessageController(fetchUserIdByToken, getMessages, postMessage, responseBuilder)
-  val userController    = new UserController(fetchUserIdByToken, createUser, editUserInfo, responseBuilder)
+  val controllerConponent: ControllerComponent = ControllerComponent.create(config.server.origin)
+  val authController                           = new AuthController(fetchUserIdByToken, login, logout, controllerConponent)
+  val messageController                        = new MessageController(fetchUserIdByToken, getMessages, postMessage, controllerConponent)
+  val userController                           = new UserController(fetchUserIdByToken, createUser, editUserInfo, controllerConponent)
 
-  val application: HttpApplication =
-    new ChatApplication(userController, authController, messageController, responseBuilder)
+  val application: HttpApplication   = new Routing(userController, authController, messageController, controllerConponent)
   val requestHandler: RequestHandler = new HttpRequestHandler(application)
 
   val serverSocketHandler = new ServerSocketHandler(requestHandler, config.server.port)

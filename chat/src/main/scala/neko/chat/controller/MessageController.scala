@@ -1,6 +1,6 @@
 package neko.chat.controller
 
-import neko.core.http.{HttpRequest, HttpResponse, HttpResponseBuilder}
+import neko.core.http.{HttpRequest, HttpResponse}
 import neko.core.http.{HttpStatus, OK, BAD_REQUEST, UNAUTHORIZED, INTERNAL_SERVER_ERROR}
 import neko.core.json.Json
 
@@ -15,7 +15,7 @@ class MessageController(
     fetchUserIdByToken: FetchUserIdByToken,
     getMessages: GetMessages,
     postMessage: PostMessage,
-    response: HttpResponseBuilder
+    cc: ControllerComponent
 ) {
 
   import MessageController._
@@ -26,7 +26,7 @@ class MessageController(
       .map(list => createJsonResponse(OK, list))
       .left
       .map {
-        case GetMessages.Error.Unknown(e) => println(e); response.build(INTERNAL_SERVER_ERROR)
+        case GetMessages.Error.Unknown(e) => println(e); cc.responseBuilder.build(INTERNAL_SERVER_ERROR)
       }
     result.merge
   }
@@ -37,17 +37,17 @@ class MessageController(
       token <- request.header.cookies
         .get("token")
         .map(Token.apply)
-        .toRight(response.build(UNAUTHORIZED))
-      userId <- fetchUserIdByToken.execute(token).toRight(response.build(UNAUTHORIZED))
+        .toRight(cc.responseBuilder.build(UNAUTHORIZED))
+      userId <- fetchUserIdByToken.execute(token).toRight(cc.responseBuilder.build(UNAUTHORIZED))
       messages = postMessage.execute(PostMessage.Request(userId, postRequest.body))
     } yield {
-      response.build(OK)
+      cc.responseBuilder.build(OK)
     }
     result.merge
   }
 
   private def createJsonResponse[T](status: HttpStatus, result: T)(implicit encoder: JsonEncoder[T]): HttpResponse = {
-    response
+    cc.responseBuilder
       .withContentType("application/json")
       .build(
         status = status,
@@ -56,7 +56,7 @@ class MessageController(
   }
 
   private def parseJsonRequest[T](request: HttpRequest, decoder: JsonDecoder[T]): Either[HttpResponse, T] = {
-    val badRequest = response.build(BAD_REQUEST, "json parse error")
+    val badRequest = cc.responseBuilder.build(BAD_REQUEST, "json parse error")
     Json
       .parse(request.bodyAsString)
       .flatMap(decoder.decode)
