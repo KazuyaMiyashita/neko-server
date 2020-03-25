@@ -1,8 +1,7 @@
 package neko.chat.controller
 
-import neko.core.http.{HttpRequest, HttpResponse}
-import neko.core.http.{HttpStatus, OK, BAD_REQUEST, CONFLICT, UNAUTHORIZED, INTERNAL_SERVER_ERROR}
-import neko.core.json.{Json, JsValue, JsonDecoder, JsonEncoder}
+import neko.core.http._
+import neko.core.json._
 
 import neko.chat.application.entity.Token
 import neko.chat.application.usecase.{FetchUserIdByToken, CreateUser, EditUserInfo}
@@ -52,13 +51,13 @@ class UserController(
       .withContentType("application/json")
       .build(
         status = status,
-        body = Json.format(Json.encode(result))
+        body = JsonFormatter.format(encoder.encode(result))
       )
   }
 
   private def parseJsonRequest[T](request: HttpRequest, decoder: JsonDecoder[T]): Either[HttpResponse, T] = {
     val badRequest = cc.responseBuilder.build(BAD_REQUEST, "json parse error")
-    Json
+    JsonParser
       .parse(request.bodyAsString)
       .flatMap(decoder.decode)
       .toRight(badRequest)
@@ -88,7 +87,7 @@ object UserController {
             case CreateUser.ValidateError.RawPasswordTooShort => "password" -> "パスワードは8文字以上である必要があります"
           }.toMap
         }
-        Json.obj("errors" -> Json.encode(errorsMap))
+        JsObject(Map("errors" -> JsonEncoder.encode(errorsMap)))
       }
     }
   }

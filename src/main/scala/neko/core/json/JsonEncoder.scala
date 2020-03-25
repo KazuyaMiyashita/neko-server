@@ -6,6 +6,8 @@ trait JsonEncoder[T] {
 
 object JsonEncoder {
 
+  def encode[T](value: T)(implicit encoder: JsonEncoder[T]): JsValue = encoder.encode(value)
+
   implicit object StringEncoder extends JsonEncoder[String] {
     override def encode(value: String): JsValue = JsString(value)
   }
@@ -22,17 +24,17 @@ object JsonEncoder {
     override def encode(value: Boolean): JsValue = JsBoolean(value)
   }
 
-  implicit def iterableEncoder[U: JsonEncoder, Iter[U] <: Iterable[U]] = new JsonEncoder[Iter[U]] {
-    override def encode(value: Iter[U]): JsValue = JsArray(value.map(Json.encode(_)).toVector)
+  implicit def iterableEncoder[U, Iter[U] <: Iterable[U]](implicit encoder: JsonEncoder[U]) = new JsonEncoder[Iter[U]] {
+    override def encode(value: Iter[U]): JsValue = JsArray(value.map(encoder.encode(_)).toVector)
   }
 
   implicit object NilEncoder extends JsonEncoder[Nil.type] {
     override def encode(value: Nil.type): JsValue = JsArray(Vector.empty)
   }
 
-  implicit def optionEncoder[U: JsonEncoder, Opt[U] <: Option[U]] = new JsonEncoder[Opt[U]] {
+  implicit def optionEncoder[U, Opt[U] <: Option[U]](implicit encoder: JsonEncoder[U]) = new JsonEncoder[Opt[U]] {
     override def encode(value: Opt[U]): JsValue = value match {
-      case Some(v) => Json.encode(v)
+      case Some(v) => encoder.encode(v)
       case None    => JsNull
     }
   }
@@ -41,9 +43,9 @@ object JsonEncoder {
     override def encode(value: None.type): JsValue = JsNull
   }
 
-  implicit def mapEncoder[U: JsonEncoder] = new JsonEncoder[Map[String, U]] {
+  implicit def mapEncoder[U](implicit encoder: JsonEncoder[U]) = new JsonEncoder[Map[String, U]] {
     override def encode(value: Map[String, U]): JsValue =
-      JsObject(value.map { case (str, js) => str -> Json.encode(js) })
+      JsObject(value.map { case (str, js) => str -> encoder.encode(js) })
   }
 
 }

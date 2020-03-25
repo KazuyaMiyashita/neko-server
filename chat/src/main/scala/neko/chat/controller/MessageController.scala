@@ -1,12 +1,7 @@
 package neko.chat.controller
 
-import neko.core.http.{HttpRequest, HttpResponse}
-import neko.core.http.{HttpStatus, OK, BAD_REQUEST, UNAUTHORIZED, INTERNAL_SERVER_ERROR}
-import neko.core.json.Json
-
-import neko.core.json.{JsonDecoder, JsonEncoder}
-import neko.core.json.JsValue
-import neko.core.http.HttpStatus
+import neko.core.http._
+import neko.core.json._
 
 import neko.chat.application.entity.Token
 import neko.chat.application.usecase.{FetchUserIdByToken, GetMessages, PostMessage}
@@ -51,13 +46,13 @@ class MessageController(
       .withContentType("application/json")
       .build(
         status = status,
-        body = Json.format(Json.encode(result))
+        body = JsonFormatter.format(encoder.encode(result))
       )
   }
 
   private def parseJsonRequest[T](request: HttpRequest, decoder: JsonDecoder[T]): Either[HttpResponse, T] = {
     val badRequest = cc.responseBuilder.build(BAD_REQUEST, "json parse error")
-    Json
+    JsonParser
       .parse(request.bodyAsString)
       .flatMap(decoder.decode)
       .toRight(badRequest)
@@ -69,12 +64,15 @@ object MessageController {
 
   implicit val messageResponseEncoder: JsonEncoder[GetMessages.MessageResponse] =
     new JsonEncoder[GetMessages.MessageResponse] {
-      override def encode(message: GetMessages.MessageResponse): JsValue = Json.obj(
-        "id"        -> Json.str(message.id.value),
-        "body"      -> Json.str(message.body.value),
-        "userName"  -> Json.str(message.userName.value),
-        "createdAt" -> Json.num(message.createdAt.toEpochMilli)
-      )
+      override def encode(message: GetMessages.MessageResponse): JsValue =
+        JsObject(
+          Map(
+            "id"        -> JsString(message.id.value),
+            "body"      -> JsString(message.body.value),
+            "userName"  -> JsString(message.userName.value),
+            "createdAt" -> JsNumber(message.createdAt.toEpochMilli)
+          )
+        )
     }
 
   case class PostRequest(body: String)

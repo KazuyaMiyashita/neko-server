@@ -1,8 +1,7 @@
 package neko.chat.controller
 
-import neko.core.http.{HttpRequest, HttpResponse}
-import neko.core.json.{Json, JsValue, JsonDecoder, JsonEncoder}
-import neko.core.http.{HttpStatus, OK, BAD_REQUEST, UNAUTHORIZED, INTERNAL_SERVER_ERROR}
+import neko.core.http._
+import neko.core.json._
 import neko.chat.application.entity.Token
 import neko.chat.application.entity.User.UserId
 import neko.chat.application.usecase.{FetchUserIdByToken, Login, Logout}
@@ -70,13 +69,13 @@ class AuthController(
       .withContentType("application/json")
       .build(
         status = status,
-        body = Json.format(Json.encode(result))
+        body = JsonFormatter.format(encoder.encode(result))
       )
   }
 
   private def parseJsonRequest[T](request: HttpRequest, decoder: JsonDecoder[T]): Either[HttpResponse, T] = {
     val badRequest = cc.responseBuilder.build(BAD_REQUEST, "json parse error")
-    Json
+    JsonParser
       .parse(request.bodyAsString)
       .flatMap(decoder.decode)
       .toRight(badRequest)
@@ -88,7 +87,7 @@ object AuthController {
 
   case class SessionResponse(userId: UserId)
   implicit val sessionResponseEncoder: JsonEncoder[SessionResponse] = new JsonEncoder[SessionResponse] {
-    override def encode(response: SessionResponse): JsValue = Json.obj("userId" -> Json.str(response.userId.value))
+    override def encode(response: SessionResponse): JsValue = JsObject(Map("userId" -> JsString(response.userId.value)))
   }
 
   val loginRequestDecoder: JsonDecoder[Login.Request] = new JsonDecoder[Login.Request] {
