@@ -39,19 +39,4 @@ object JsonDecoder {
     }
   }
 
-  implicit def listDecoder[U: JsonDecoder] = new JsonDecoder[List[U]] {
-    override def decode(js: JsValue): Option[List[U]] = js match {
-      // JsArrayの中の要素がUに揃っていなければLeft
-      case JsArray(value) =>
-        value
-          .foldLeft[Option[List[U]]](Some(Nil)) { (acc, value) =>
-            value.as[U].flatMap { u =>
-              acc.map(u :: _)
-            }
-          }
-          .map(_.reverse)
-      case _ => None
-    }
-  }
-
 }

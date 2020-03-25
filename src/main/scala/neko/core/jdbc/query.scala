@@ -1,16 +1,14 @@
 package neko.core.jdbc
 
-import java.sql.{PreparedStatement, ResultSet, Connection}
+import java.sql.ResultSet
 
 object query {
 
-  def select[T](ps: PreparedStatement, mapping: ResultSet => T)(conn: Connection): Option[T] = {
-    val resultSet: ResultSet = ps.executeQuery()
+  def select[T](resultSet: ResultSet, mapping: ResultSet => T): Option[T] = {
     Option.when(resultSet.next())(mapping(resultSet))
   }
 
-  def list[T](ps: PreparedStatement, mapping: ResultSet => T)(conn: Connection): List[T] = {
-    val resultSet: ResultSet = ps.executeQuery()
+  def list[T](resultSet: ResultSet, mapping: ResultSet => T): List[T] = {
     Iterator.continually(resultSet).takeWhile(_.next()).map(mapping).toList
   }
 

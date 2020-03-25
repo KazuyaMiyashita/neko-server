@@ -72,7 +72,8 @@ object MessageRepositoryImpl {
           createdAt = row.getTimestamp("u.created_at").toInstant
         )
       )
-    list(pstmt, mapping)(conn)
+    val rs = pstmt.executeQuery()
+    list(rs, mapping)
   }
 
   def saveMessageIO(message: Message): ConnectionIO[Nothing, Unit] = ConnectionIO.right { conn =>

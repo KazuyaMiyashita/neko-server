@@ -92,29 +92,31 @@ object UserRepositoryImpl {
         name = UserName(row.getString("name")),
         createdAt = row.getTimestamp("created_at").toInstant
       )
-    val stmt = conn.prepareStatement(query)
-    stmt.setString(1, userId.value)
-    select(stmt, mapping)(conn)
+    val pstmt = conn.prepareStatement(query)
+    pstmt.setString(1, userId.value)
+    val rs = pstmt.executeQuery()
+    select(rs, mapping)
   }
 
   def selectUserIdFromAuthsIO(email: Email, hashedPassword: HashedPassword): ConnectionIO[Nothing, Option[UserId]] =
     ConnectionIO.right { conn =>
       val query                        = "select user_id from auths where email = ? and hashed_password = ?;"
       val mapping: ResultSet => UserId = row => UserId(UUID.fromString(row.getString("user_id")))
-      val stmt                         = conn.prepareStatement(query)
-      stmt.setString(1, email.value)
-      stmt.setString(2, hashedPassword.value)
-      select(stmt, mapping)(conn)
+      val pstmt                        = conn.prepareStatement(query)
+      pstmt.setString(1, email.value)
+      pstmt.setString(2, hashedPassword.value)
+      val rs = pstmt.executeQuery()
+      select(rs, mapping)
     }
 
   def insertUserIO(user: User): ConnectionIO[Nothing, Unit] = ConnectionIO.right { conn =>
     val query =
       """insert into users(id, name, created_at) values (?, ?, ?);"""
-    val stmt = conn.prepareStatement(query)
-    stmt.setString(1, user.id.value)
-    stmt.setString(2, user.name.value)
-    stmt.setTimestamp(3, Timestamp.from(user.createdAt))
-    stmt.executeUpdate()
+    val pstmt = conn.prepareStatement(query)
+    pstmt.setString(1, user.id.value)
+    pstmt.setString(2, user.name.value)
+    pstmt.setTimestamp(3, Timestamp.from(user.createdAt))
+    pstmt.executeUpdate()
     ()
   }
 

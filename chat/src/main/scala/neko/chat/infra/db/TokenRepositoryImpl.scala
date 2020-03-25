@@ -88,7 +88,8 @@ object TokenRepositoryImpl {
     val pstmt = conn.prepareStatement(query)
     pstmt.setString(1, token.value)
     val mapping: ResultSet => UserId = row => UserId(UUID.fromString(row.getString("user_id")))
-    select(pstmt, mapping)(conn)
+    val rs                           = pstmt.executeQuery()
+    select(rs, mapping)
   }
 
 }
