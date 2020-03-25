@@ -43,8 +43,10 @@ class UserRepositoryImpl(
     io.runTx(dbPool.getConnection())
   }
 
-  override def createHashedPassword(rawPassword: RawPassword): HashedPassword = {
-    _createHashedPassword(rawPassword, applicationSecret)
+  override def fetchUserBy(userId: UserId): Try[Option[User]] = {
+    selectUserIO(userId)
+      .runReadOnly(dbPool.getConnection())
+      .map(_.merge)
   }
 
   override def fetchUserIdBy(email: Email, rawPassword: RawPassword): Try[Option[UserId]] = {
@@ -54,54 +56,13 @@ class UserRepositoryImpl(
       .map(_.merge)
   }
 
-  override def fetchBy(userId: UserId): Try[Option[User]] = {
-    selectUserIO(userId)
-      .runReadOnly(dbPool.getConnection())
-      .map(_.merge)
+  override def createHashedPassword(rawPassword: RawPassword): HashedPassword = {
+    _createHashedPassword(rawPassword, applicationSecret)
   }
 
 }
 
 object UserRepositoryImpl {
-
-  val secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
-
-  def _createHashedPassword(rawPassword: RawPassword, applicationSecret: String): HashedPassword = {
-    val keySpec = new PBEKeySpec(
-      rawPassword.value.toCharArray,
-      applicationSecret.getBytes,
-      /* iterationCount = */ 10000,
-      /* keyLength = */ 512 /* bytes */
-    )
-    val secretKey: SecretKey = secretKeyFactory.generateSecret(keySpec)
-    val value                = Base64.getEncoder.encodeToString(secretKey.getEncoded)
-    HashedPassword(value)
-  }
-
-  def selectUserIO(userId: UserId): ConnectionIO[Nothing, Option[User]] = ConnectionIO.right { conn =>
-    val query = """select * from users where id = ?;"""
-    val mapping: ResultSet => User = row =>
-      User(
-        id = UserId(UUID.fromString(row.getString("id"))),
-        name = UserName(row.getString("name")),
-        createdAt = row.getTimestamp("created_at").toInstant
-      )
-    val pstmt = conn.prepareStatement(query)
-    pstmt.setString(1, userId.value)
-    val rs = pstmt.executeQuery()
-    select(rs, mapping)
-  }
-
-  def selectUserIdFromAuthsIO(email: Email, hashedPassword: HashedPassword): ConnectionIO[Nothing, Option[UserId]] =
-    ConnectionIO.right { conn =>
-      val query                        = "select user_id from auths where email = ? and hashed_password = ?;"
-      val mapping: ResultSet => UserId = row => UserId(UUID.fromString(row.getString("user_id")))
-      val pstmt                        = conn.prepareStatement(query)
-      pstmt.setString(1, email.value)
-      pstmt.setString(2, hashedPassword.value)
-      val rs = pstmt.executeQuery()
-      select(rs, mapping)
-    }
 
   def insertUserIO(user: User): ConnectionIO[Nothing, Unit] = ConnectionIO.right { conn =>
     val query =
@@ -129,6 +90,44 @@ object UserRepositoryImpl {
         case e: SQLIntegrityConstraintViolationException if e.getErrorCode == MysqlErrorNumbers.ER_DUP_ENTRY =>
           UserRepository.SaveNewUserError.DuplicateEmail(e)
       }
+  }
+
+  def selectUserIO(userId: UserId): ConnectionIO[Nothing, Option[User]] = ConnectionIO.right { conn =>
+    val query = """select * from users where id = ?;"""
+    val mapping: ResultSet => User = row =>
+      User(
+        id = UserId(UUID.fromString(row.getString("id"))),
+        name = UserName(row.getString("name")),
+        createdAt = row.getTimestamp("created_at").toInstant
+      )
+    val pstmt = conn.prepareStatement(query)
+    pstmt.setString(1, userId.value)
+    val rs = pstmt.executeQuery()
+    select(rs, mapping)
+  }
+
+  def selectUserIdFromAuthsIO(email: Email, hashedPassword: HashedPassword): ConnectionIO[Nothing, Option[UserId]] =
+    ConnectionIO.right { conn =>
+      val query                        = "select user_id from auths where email = ? and hashed_password = ?;"
+      val mapping: ResultSet => UserId = row => UserId(UUID.fromString(row.getString("user_id")))
+      val pstmt                        = conn.prepareStatement(query)
+      pstmt.setString(1, email.value)
+      pstmt.setString(2, hashedPassword.value)
+      val rs = pstmt.executeQuery()
+      select(rs, mapping)
+    }
+
+  val secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+  def _createHashedPassword(rawPassword: RawPassword, applicationSecret: String): HashedPassword = {
+    val keySpec = new PBEKeySpec(
+      rawPassword.value.toCharArray,
+      applicationSecret.getBytes,
+      /* iterationCount = */ 10000,
+      /* keyLength = */ 512 /* bytes */
+    )
+    val secretKey: SecretKey = secretKeyFactory.generateSecret(keySpec)
+    val value                = Base64.getEncoder.encodeToString(secretKey.getEncoded)
+    HashedPassword(value)
   }
 
 }
