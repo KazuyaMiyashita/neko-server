@@ -42,8 +42,8 @@ object CreateUser {
       }
       (_un, _e, _rp) match {
         case (Right(un), Right(e), Right(rp)) => Right((un, e, rp))
-        case (un, e, rp) =>
-          Left(Error.ValidateErrors(List(un, e, rp).collect {
+        case _ =>
+          Left(Error.ValidateErrors(List(_un, _e, _rp).collect {
             case Left(v) => v
           }: _*))
       }
