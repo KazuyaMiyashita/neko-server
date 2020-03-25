@@ -6,6 +6,9 @@ import java.time.Instant
 import neko.core.http.{HttpRequest, HttpRequestLine, HttpMethod, HttpRequestHeader, HttpRequestBody, OK}
 import neko.core.http.{GET, POST}
 
+import neko.core.http.HttpResponseBuilder
+import neko.chat.controller.common.HttpResponseBuilderFactory
+
 import neko.chat.application.entity.{Message, Token}
 import neko.chat.application.entity.Message.{MessageId, MessageBody}
 import neko.chat.application.entity.User.{UserName, UserId}
@@ -18,6 +21,8 @@ import neko.chat.ChatApplication
 class MessageControllerSpec extends FlatSpec with Matchers {
 
   import MessageControllerSpec._
+
+  val responseBuilder: HttpResponseBuilder = new HttpResponseBuilderFactory("http://localhost:8000").responseBuilder
 
   "GET /messages" should "200" in {
     val stubGetMessages = new GetMessages(null) {
@@ -40,9 +45,19 @@ class MessageControllerSpec extends FlatSpec with Matchers {
         )
     }
     val messageController =
-      new MessageController(fetchUserIdByToken = null, getMessages = stubGetMessages, postMessage = null)
+      new MessageController(
+        fetchUserIdByToken = null,
+        getMessages = stubGetMessages,
+        postMessage = null,
+        responseBuilder
+      )
     val chatApplication =
-      new ChatApplication(userController = null, authController = null, messageController = messageController)
+      new ChatApplication(
+        userController = null,
+        authController = null,
+        messageController = messageController,
+        responseBuilder
+      )
 
     val request = buildJsonRequest(
       method = GET,
@@ -93,10 +108,16 @@ class MessageControllerSpec extends FlatSpec with Matchers {
       new MessageController(
         fetchUserIdByToken = stubFetchUserIdByToken,
         getMessages = null,
-        postMessage = stubPostMessage
+        postMessage = stubPostMessage,
+        responseBuilder
       )
     val chatApplication =
-      new ChatApplication(userController = null, authController = null, messageController = messageController)
+      new ChatApplication(
+        userController = null,
+        authController = null,
+        messageController = messageController,
+        responseBuilder
+      )
 
     val request = buildJsonRequest(
       method = POST,

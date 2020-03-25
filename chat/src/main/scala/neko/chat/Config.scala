@@ -30,12 +30,15 @@ object DBConfig {
   )
 }
 
-case class ServerConfig(port: Int)
+case class ServerConfig(port: Int, origin: String)
 object ServerConfig {
   def fromEnv() = ServerConfig(
-    sys.env
+    port = sys.env
       .get("SERVER_PORT")
       .getOrElse(throw new RuntimeException("system environment SERVER_PORT is required"))
-      .toInt
+      .toInt,
+    origin = sys.env
+      .get("SERVER_ORIGIN")
+      .getOrElse(throw new RuntimeException("system environment SERVER_ORIGIN is required"))
   )
 }

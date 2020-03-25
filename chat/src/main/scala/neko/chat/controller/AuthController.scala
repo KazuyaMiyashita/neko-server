@@ -1,6 +1,6 @@
 package neko.chat.controller
 
-import neko.core.http.{HttpRequest, HttpResponse}
+import neko.core.http.{HttpRequest, HttpResponse, HttpResponseBuilder}
 import neko.core.json.{Json, JsValue, JsonDecoder, JsonEncoder}
 import neko.core.http.{HttpStatus, OK, BAD_REQUEST, UNAUTHORIZED, INTERNAL_SERVER_ERROR}
 import neko.chat.application.entity.Token
@@ -10,7 +10,8 @@ import neko.chat.application.usecase.{FetchUserIdByToken, Login, Logout}
 class AuthController(
     fetchUserIdByToken: FetchUserIdByToken,
     login: Login,
-    logout: Logout
+    logout: Logout,
+    response: HttpResponseBuilder
 ) {
 
   import AuthController._
@@ -20,8 +21,8 @@ class AuthController(
       token <- request.header.cookies
         .get("token")
         .map(Token.apply)
-        .toRight(HttpResponse(UNAUTHORIZED))
-      userId <- fetchUserIdByToken.execute(token).toRight(HttpResponse(UNAUTHORIZED))
+        .toRight(response.build(UNAUTHORIZED))
+      userId <- fetchUserIdByToken.execute(token).toRight(response.build(UNAUTHORIZED))
     } yield {
       createJsonResponse(OK, SessionResponse(userId))
     }
@@ -32,17 +33,18 @@ class AuthController(
     val result = for {
       loginRequest <- parseJsonRequest(request, loginRequestDecoder)
       token <- login.execute(loginRequest).left.map {
-        case Login.Error.EmailWrongFormat    => HttpResponse(BAD_REQUEST, "メールアドレスの形式がおかしい")
-        case Login.Error.RawPasswordTooShort => HttpResponse(BAD_REQUEST, "パスワードは8文字以上である必要があります")
-        case Login.Error.UserNotExist        => HttpResponse(UNAUTHORIZED, "メールアドレスかパスワードが間違っている")
+        case Login.Error.EmailWrongFormat    => response.build(BAD_REQUEST, "メールアドレスの形式がおかしい")
+        case Login.Error.RawPasswordTooShort => response.build(BAD_REQUEST, "パスワードは8文字以上である必要があります")
+        case Login.Error.UserNotExist        => response.build(UNAUTHORIZED, "メールアドレスかパスワードが間違っている")
         case Login.Error.Unknown(e) => {
           println(e)
-          HttpResponse(INTERNAL_SERVER_ERROR)
+          response.build(INTERNAL_SERVER_ERROR)
         }
       }
     } yield {
-      HttpResponse(OK)
-        .withHeader("Set-Cookie", s"token=${token.value}; Path=/")
+      response
+        .withHeader("Set-Cookie" -> s"token=${token.value}; Path=/")
+        .build(OK)
     }
     result.merge
   }
@@ -52,30 +54,37 @@ class AuthController(
       token <- request.header.cookies
         .get("token")
         .map(Token.apply)
-        .toRight(HttpResponse(OK))
+        .toRight(response.build(OK))
     } yield {
       logout.execute(token)
-      HttpResponse(OK)
-        .withHeader("Set-Cookie", "token=; Path=/; Max-Age=0")
+      response
+        .withHeader("Set-Cookie" -> "token=; Path=/; Max-Age=0")
+        .build(OK)
+
     }
     result.merge
+  }
+
+  private def createJsonResponse[T](status: HttpStatus, result: T)(implicit encoder: JsonEncoder[T]): HttpResponse = {
+    response
+      .withContentType("application/json")
+      .build(
+        status = status,
+        body = Json.format(Json.encode(result))
+      )
+  }
+
+  private def parseJsonRequest[T](request: HttpRequest, decoder: JsonDecoder[T]): Either[HttpResponse, T] = {
+    val badRequest = response.build(BAD_REQUEST, "json parse error")
+    Json
+      .parse(request.bodyAsString)
+      .flatMap(decoder.decode)
+      .toRight(badRequest)
   }
 
 }
 
 object AuthController {
-
-  def createJsonResponse[T](status: HttpStatus, result: T)(implicit encoder: JsonEncoder[T]): HttpResponse = {
-    HttpResponse(status, Json.format(Json.encode(result)))
-      .withContentType("application/json")
-  }
-
-  def parseJsonRequest[T](request: HttpRequest, decoder: JsonDecoder[T]): Either[HttpResponse, T] = {
-    Json
-      .parse(request.bodyAsString)
-      .flatMap(decoder.decode)
-      .toRight(HttpResponse(BAD_REQUEST, "json parse error"))
-  }
 
   case class SessionResponse(userId: UserId)
   implicit val sessionResponseEncoder: JsonEncoder[SessionResponse] = new JsonEncoder[SessionResponse] {

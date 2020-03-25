@@ -1,6 +1,6 @@
 package neko.chat.controller
 
-import neko.core.http.{HttpRequest, HttpResponse}
+import neko.core.http.{HttpRequest, HttpResponse, HttpResponseBuilder}
 import neko.core.http.{HttpStatus, OK, BAD_REQUEST, UNAUTHORIZED, INTERNAL_SERVER_ERROR}
 import neko.core.json.Json
 
@@ -14,7 +14,8 @@ import neko.chat.application.usecase.{FetchUserIdByToken, GetMessages, PostMessa
 class MessageController(
     fetchUserIdByToken: FetchUserIdByToken,
     getMessages: GetMessages,
-    postMessage: PostMessage
+    postMessage: PostMessage,
+    response: HttpResponseBuilder
 ) {
 
   import MessageController._
@@ -25,7 +26,7 @@ class MessageController(
       .map(list => createJsonResponse(OK, list))
       .left
       .map {
-        case GetMessages.Error.Unknown(e) => println(e); HttpResponse(INTERNAL_SERVER_ERROR)
+        case GetMessages.Error.Unknown(e) => println(e); response.build(INTERNAL_SERVER_ERROR)
       }
     result.merge
   }
@@ -36,30 +37,35 @@ class MessageController(
       token <- request.header.cookies
         .get("token")
         .map(Token.apply)
-        .toRight(HttpResponse(UNAUTHORIZED))
-      userId <- fetchUserIdByToken.execute(token).toRight(HttpResponse(UNAUTHORIZED))
+        .toRight(response.build(UNAUTHORIZED))
+      userId <- fetchUserIdByToken.execute(token).toRight(response.build(UNAUTHORIZED))
       messages = postMessage.execute(PostMessage.Request(userId, postRequest.body))
     } yield {
-      HttpResponse(OK).withContentType("application/json")
+      response.build(OK)
     }
     result.merge
+  }
+
+  private def createJsonResponse[T](status: HttpStatus, result: T)(implicit encoder: JsonEncoder[T]): HttpResponse = {
+    response
+      .withContentType("application/json")
+      .build(
+        status = status,
+        body = Json.format(Json.encode(result))
+      )
+  }
+
+  private def parseJsonRequest[T](request: HttpRequest, decoder: JsonDecoder[T]): Either[HttpResponse, T] = {
+    val badRequest = response.build(BAD_REQUEST, "json parse error")
+    Json
+      .parse(request.bodyAsString)
+      .flatMap(decoder.decode)
+      .toRight(badRequest)
   }
 
 }
 
 object MessageController {
-
-  def createJsonResponse[T](status: HttpStatus, result: T)(implicit encoder: JsonEncoder[T]): HttpResponse = {
-    HttpResponse(status, Json.format(Json.encode(result)))
-      .withContentType("application/json")
-  }
-
-  def parseJsonRequest[T](request: HttpRequest, decoder: JsonDecoder[T]): Either[HttpResponse, T] = {
-    Json
-      .parse(request.bodyAsString)
-      .flatMap(decoder.decode)
-      .toRight(HttpResponse(BAD_REQUEST, "json parse error"))
-  }
 
   implicit val messageResponseEncoder: JsonEncoder[GetMessages.MessageResponse] =
     new JsonEncoder[GetMessages.MessageResponse] {

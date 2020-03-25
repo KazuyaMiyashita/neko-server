@@ -6,6 +6,9 @@ import neko.chat.ChatApplication
 import neko.core.http.{HttpRequest, HttpRequestLine, HttpMethod, HttpRequestHeader, HttpRequestBody, OK}
 import neko.core.http.{GET, POST}
 
+import neko.core.http.HttpResponseBuilder
+import neko.chat.controller.common.HttpResponseBuilderFactory
+
 import neko.chat.application.usecase.{FetchUserIdByToken, Login, Logout}
 import neko.chat.application.entity.Token
 import neko.chat.application.entity.User.UserId
@@ -16,6 +19,8 @@ class AuthControllerSpec extends FlatSpec with Matchers {
 
   import AuthControllerSpec._
 
+  val responseBuilder: HttpResponseBuilder = new HttpResponseBuilderFactory("http://localhost:8000").responseBuilder
+
   "POST /auth/login" should "200" in {
     val stubLogin = new Login(null, null) {
       override def execute(request: Login.Request): Either[Login.Error, Token] =
@@ -24,12 +29,14 @@ class AuthControllerSpec extends FlatSpec with Matchers {
     val authController = new AuthController(
       fetchUserIdByToken = null,
       login = stubLogin,
-      logout = null
+      logout = null,
+      responseBuilder
     )
     val chatApplication = new ChatApplication(
       userController = null,
       authController = authController,
-      messageController = null
+      messageController = null,
+      responseBuilder
     )
 
     val request = buildJsonRequest(
@@ -55,12 +62,14 @@ class AuthControllerSpec extends FlatSpec with Matchers {
     val authController = new AuthController(
       fetchUserIdByToken = null,
       login = null,
-      logout = stubLogout
+      logout = stubLogout,
+      responseBuilder
     )
     val chatApplication = new ChatApplication(
       userController = null,
       authController = authController,
-      messageController = null
+      messageController = null,
+      responseBuilder
     )
 
     val request = buildJsonRequest(
@@ -85,12 +94,14 @@ class AuthControllerSpec extends FlatSpec with Matchers {
     val authController = new AuthController(
       fetchUserIdByToken = stubFetchUserIdByToken,
       login = null,
-      logout = null
+      logout = null,
+      responseBuilder
     )
     val chatApplication = new ChatApplication(
       userController = null,
       authController = authController,
-      messageController = null
+      messageController = null,
+      responseBuilder
     )
 
     val request = buildJsonRequest(

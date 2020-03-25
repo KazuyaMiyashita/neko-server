@@ -6,18 +6,6 @@ case class HttpResponse(
     body: Option[String]
 ) {
 
-  def withContentType(contentType: String) = HttpResponse(
-    status,
-    headers + (("Content-Type") -> contentType),
-    body
-  )
-
-  def withHeader(key: String, value: String) = HttpResponse(
-    status,
-    headers + (key -> value),
-    body
-  )
-
   def asString: String = {
     import scala.collection.mutable.StringBuilder
     val str = new StringBuilder
@@ -27,29 +15,6 @@ case class HttpResponse(
       str append msg
     }
     str.mkString
-  }
-
-}
-
-object HttpResponse {
-
-  def apply(status: HttpStatus) = {
-    val headers = Map(
-      ("Content-Length"                   -> "0"),
-      ("Access-Control-Allow-Origin"      -> "http://localhost:8000"), // これアプリケーションじゃなくてcoreの方にあるの何で？
-      ("Access-Control-Allow-Credentials" -> "true"),
-      ("Connection"                       -> "close")
-    )
-    new HttpResponse(status, headers, None)
-  }
-  def apply(status: HttpStatus, body: String) = {
-    val headers = Map(
-      ("Content-Length"                   -> body.getBytes.length.toString),
-      ("Access-Control-Allow-Origin"      -> "http://localhost:8000"),
-      ("Access-Control-Allow-Credentials" -> "true"),
-      ("Connection"                       -> "close")
-    )
-    new HttpResponse(status, headers, Some(body))
   }
 
 }

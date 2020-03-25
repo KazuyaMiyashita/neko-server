@@ -5,6 +5,7 @@ import neko.core.http._
 import java.time.Clock
 import neko.core.jdbc.DBPool
 import java.sql.{DriverManager, Connection}
+
 import neko.chat.application.repository.{MessageRepository, TokenRepository, UserRepository}
 import neko.chat.application.usecase.{
   CreateUser,
@@ -17,6 +18,7 @@ import neko.chat.application.usecase.{
 }
 import neko.chat.infra.db.{MessageRepositoryImpl, TokenRepositoryImpl, UserRepositoryImpl}
 import neko.chat.controller.{AuthController, UserController, MessageController}
+import neko.chat.controller.common.HttpResponseBuilderFactory
 
 object Main extends App {
 
@@ -36,6 +38,7 @@ object Main extends App {
   val messageRepository: MessageRepository = new MessageRepositoryImpl(dbPool, clock)
   val tokenRepository: TokenRepository     = new TokenRepositoryImpl(dbPool, clock, config.applicationSecret)
   val userRepository: UserRepository       = new UserRepositoryImpl(dbPool, clock, config.applicationSecret)
+  val responseBuilder: HttpResponseBuilder = new HttpResponseBuilderFactory(config.server.origin).responseBuilder
 
   val createUser         = new CreateUser(userRepository)
   val editUserInfo       = new EditUserInfo(userRepository)
@@ -45,11 +48,12 @@ object Main extends App {
   val logout             = new Logout(tokenRepository)
   val postMessage        = new PostMessage(messageRepository)
 
-  val authController    = new AuthController(fetchUserIdByToken, login, logout)
-  val messageController = new MessageController(fetchUserIdByToken, getMessages, postMessage)
-  val userController    = new UserController(fetchUserIdByToken, createUser, editUserInfo)
+  val authController    = new AuthController(fetchUserIdByToken, login, logout, responseBuilder)
+  val messageController = new MessageController(fetchUserIdByToken, getMessages, postMessage, responseBuilder)
+  val userController    = new UserController(fetchUserIdByToken, createUser, editUserInfo, responseBuilder)
 
-  val application: HttpApplication   = new ChatApplication(userController, authController, messageController)
+  val application: HttpApplication =
+    new ChatApplication(userController, authController, messageController, responseBuilder)
   val requestHandler: RequestHandler = new HttpRequestHandler(application)
 
   val serverSocketHandler = new ServerSocketHandler(requestHandler, config.server.port)

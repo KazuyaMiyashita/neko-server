@@ -1,12 +1,14 @@
 package neko.chat
 
+import neko.core.http.HttpResponseBuilder
 import neko.chat.controller.{UserController, AuthController, MessageController}
 import neko.core.http._
 
 class ChatApplication(
     userController: UserController,
     authController: AuthController,
-    messageController: MessageController
+    messageController: MessageController,
+    response: HttpResponseBuilder
 ) extends HttpApplication {
 
   override def handle(request: HttpRequest): HttpResponse = {
@@ -14,7 +16,7 @@ class ChatApplication(
     val router: Router = {
       import RoutingDSL._
       Router(
-        GET  -> "/"             -> (_ => HttpResponse(OK, "Hello My Server!")),
+        GET  -> "/"             -> (_ => response.build(OK, "Hello My Server!")),
         POST -> "/users"        -> userController.create,
         PUT  -> "/users"        -> userController.edit,
         POST -> "/auth/login"   -> authController.login,
@@ -26,11 +28,11 @@ class ChatApplication(
     }
 
     try {
-      router.handle(request).getOrElse(HttpResponse(NOT_FOUND))
+      router.handle(request).getOrElse(response.build(NOT_FOUND))
     } catch {
       case e: Throwable => {
         e.printStackTrace()
-        HttpResponse(INTERNAL_SERVER_ERROR)
+        response.build(INTERNAL_SERVER_ERROR)
       }
     }
 
