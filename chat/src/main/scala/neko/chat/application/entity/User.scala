@@ -17,7 +17,7 @@ object User {
 
   case class UserName(value: String)
   object UserName {
-    def from(name: String): Either[UserName.Error, UserName] = {
+    def of(name: String): Either[UserName.Error, UserName] = {
       if (name.length > 0 && name.length <= 20) Right(UserName(name))
       else Left(Error.TooLong)
     }

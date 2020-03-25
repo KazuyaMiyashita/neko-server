@@ -21,7 +21,7 @@ object EditUserInfo {
   ) {
     def validate: Either[Error.ValidateError, UserName] = {
       for {
-        nun <- UserName.from(newUserName).left.map {
+        nun <- UserName.of(newUserName).left.map {
           case UserName.Error.TooLong => Error.UserNameTooLong
         }
       } yield nun

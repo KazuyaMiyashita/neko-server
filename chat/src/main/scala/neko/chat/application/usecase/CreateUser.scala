@@ -31,7 +31,7 @@ object CreateUser {
       rawPassword: String
   ) {
     def validate: Either[Error.ValidateErrors, (UserName, Email, RawPassword)] = {
-      val _un: Either[ValidateError, UserName] = UserName.from(userName).left.map {
+      val _un: Either[ValidateError, UserName] = UserName.of(userName).left.map {
         case UserName.Error.TooLong => ValidateError.UserNameTooLong
       }
       val _e: Either[ValidateError, Email] = Email.of(email).left.map {
