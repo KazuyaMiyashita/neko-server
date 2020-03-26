@@ -18,7 +18,8 @@ class UserController(
       _ <- createUser.execute(createUserRequest).left.map {
         case errors: CreateUser.Error.ValidateErrors =>
           createJsonResponse(BAD_REQUEST, errors)(createUserValidateErrorsEncoder)
-        case CreateUser.Error.DuplicateEmail => cc.responseBuilder.build(CONFLICT, "メールアドレスが既に登録されています")
+        case CreateUser.Error.DuplicateEmail =>
+          createJsonResponse(CONFLICT, CreateUser.Error.DuplicateEmail)(createUserDuplicateEmailEncoder)
         case CreateUser.Error.Unknown(e) => {
           println(e)
           cc.responseBuilder.build(INTERNAL_SERVER_ERROR)
@@ -70,6 +71,14 @@ object UserController {
           }.toMap
         }
         JsObject(Map("errors" -> JsonEncoder.encode(errorsMap)))
+      }
+    }
+  }
+
+  val createUserDuplicateEmailEncoder: JsonEncoder[CreateUser.Error.DuplicateEmail.type] = {
+    new JsonEncoder[CreateUser.Error.DuplicateEmail.type] {
+      override def encode(value: CreateUser.Error.DuplicateEmail.type): JsValue = {
+        JsObject(Map("errors" -> JsonEncoder.encode(Map("email" -> "メールアドレスが既に登録されています"))))
       }
     }
   }

@@ -126,7 +126,7 @@ object UserRepositoryImpl {
       /* keyLength = */ 512 /* bytes */
     )
     val secretKey: SecretKey = secretKeyFactory.generateSecret(keySpec)
-    val value                = Base64.getEncoder.encodeToString(secretKey.getEncoded)
+    val value: String        = Base64.getEncoder.encodeToString(secretKey.getEncoded)
     HashedPassword(value)
   }
 

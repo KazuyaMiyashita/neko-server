@@ -1,10 +1,6 @@
 package neko.chat
 
-case class Config(
-    db: DBConfig,
-    server: ServerConfig,
-    applicationSecret: String
-)
+case class Config(db: DBConfig, server: ServerConfig, applicationSecret: String)
 
 object Config {
   def fromEnv() = Config(
@@ -16,11 +12,7 @@ object Config {
   )
 }
 
-case class DBConfig(
-    url: String,
-    user: String,
-    password: String
-)
+case class DBConfig(url: String, user: String, password: String)
 
 object DBConfig {
   def fromEnv() = DBConfig(
@@ -30,15 +22,15 @@ object DBConfig {
   )
 }
 
-case class ServerConfig(port: Int, origin: String)
+case class ServerConfig(port: Int, allowOrigin: String)
 object ServerConfig {
   def fromEnv() = ServerConfig(
     port = sys.env
       .get("SERVER_PORT")
       .getOrElse(throw new RuntimeException("system environment SERVER_PORT is required"))
       .toInt,
-    origin = sys.env
-      .get("SERVER_ORIGIN")
-      .getOrElse(throw new RuntimeException("system environment SERVER_ORIGIN is required"))
+    allowOrigin = sys.env
+      .get("SERVER_ALLOW_ORIGIN")
+      .getOrElse(throw new RuntimeException("system environment SERVER_ALLOW_ORIGIN is required"))
   )
 }

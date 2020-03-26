@@ -24,10 +24,13 @@ class Routing(
       )
     }
 
-    router.handle(request)(onNotFound = cc.responseBuilder.build(NOT_FOUND), onError = { e: Throwable =>
-      e.printStackTrace()
-      cc.responseBuilder.build(INTERNAL_SERVER_ERROR)
-    })
+    router.handle(request)(
+      onNotFound = cc.responseBuilder.build(NOT_FOUND),
+      onError = { e: Throwable =>
+        e.printStackTrace()
+        cc.responseBuilder.build(INTERNAL_SERVER_ERROR)
+      }
+    )
 
   }
 

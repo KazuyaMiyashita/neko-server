@@ -3,16 +3,7 @@ package neko.chat.controller
 import java.util.UUID
 import java.time.Instant
 
-import neko.core.http.{
-  HttpRequest,
-  HttpRequestLine,
-  HttpMethod,
-  HttpRequestHeader,
-  HttpRequestBody,
-  POST,
-  OK,
-  BAD_REQUEST
-}
+import neko.core.http._
 
 import neko.chat.application.entity.User
 import neko.chat.application.entity.User.{UserId, UserName}
@@ -23,7 +14,7 @@ import org.scalatest._
 
 class UserControllerSpec extends FlatSpec with Matchers {
 
-  import UserControllerSpec._
+  import UserControllerSpec.buildJsonRequest
 
   val controllerConponent: ControllerComponent = ControllerComponent.create("http://localhost:8000")
 
@@ -60,7 +51,7 @@ class UserControllerSpec extends FlatSpec with Matchers {
     response.status shouldEqual OK
   }
 
-  "POST /users" should "400 (one error)" in {
+  "POST /users" should "400 (one validation error)" in {
     val stubCreateUser = new CreateUser(null) {
       override def execute(request: CreateUser.Request): Either[CreateUser.Error, User] =
         Left(CreateUser.Error.ValidateErrors(CreateUser.ValidateError.UserNameTooLong))
@@ -99,7 +90,7 @@ class UserControllerSpec extends FlatSpec with Matchers {
         |}""".stripMargin
   }
 
-  "POST /users" should "400 (three errors)" in {
+  "POST /users" should "400 (three validation errors)" in {
     import CreateUser.ValidateError._
 
     val stubCreateUser = new CreateUser(null) {
@@ -138,6 +129,45 @@ class UserControllerSpec extends FlatSpec with Matchers {
         |    "name": "ユーザー名は20文字以下である必要があります",
         |    "email": "メールアドレスの形式がおかしい",
         |    "password": "パスワードは8文字以上である必要があります"
+        |  }
+        |}""".stripMargin
+  }
+
+  "POST /users" should "400 (duplicate email)" in {
+    val stubCreateUser = new CreateUser(null) {
+      override def execute(request: CreateUser.Request): Either[CreateUser.Error, User] =
+        Left(CreateUser.Error.DuplicateEmail)
+    }
+    val userController =
+      new UserController(
+        createUser = stubCreateUser,
+        controllerConponent
+      )
+    val chatApplication = new Routing(
+      userController = userController,
+      authController = null,
+      messageController = null,
+      controllerConponent
+    )
+
+    val request = buildJsonRequest(
+      method = POST,
+      url = "/users",
+      headers = Nil,
+      body = """{
+               |  "name": "FooooOooooOooooOoooo",
+               |  "email": "foo@example.com",
+               |  "password": "abcde123"
+               |}""".stripMargin // This test does not actually verify this here
+    )
+
+    val response = chatApplication.handle(request)
+
+    response.status shouldEqual CONFLICT
+    response.body.get shouldEqual
+      """{
+        |  "errors": {
+        |    "email": "メールアドレスが既に登録されています"
         |  }
         |}""".stripMargin
   }

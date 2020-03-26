@@ -37,7 +37,7 @@ object Main extends App {
   val logout             = new Logout(tokenRepository)
   val postMessage        = new PostMessage(messageRepository)
 
-  val controllerConponent: ControllerComponent = ControllerComponent.create(config.server.origin)
+  val controllerConponent: ControllerComponent = ControllerComponent.create(config.server.allowOrigin)
   val authController                           = new AuthController(fetchUserIdByToken, login, logout, controllerConponent)
   val messageController                        = new MessageController(fetchUserIdByToken, getMessages, postMessage, controllerConponent)
   val userController                           = new UserController(createUser, controllerConponent)
