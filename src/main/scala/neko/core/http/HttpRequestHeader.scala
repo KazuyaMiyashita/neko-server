@@ -4,7 +4,7 @@ case class HttpRequestHeader(
     lines: Seq[String]
 ) {
 
-  val fields: Map[String, Seq[String]] =
+  private val fields: Map[String, Seq[String]] =
     lines
       .map { line =>
         val Array(key, value) = line.split(":", 2)
@@ -15,12 +15,14 @@ case class HttpRequestHeader(
       .mapValues(_.map(_._2))
       .toMap
 
-  def contentLength: Option[Int]  = fields.get("content-length").flatMap(_.headOption).flatMap(_.toIntOption)
-  def contentType: Option[String] = fields.get("content-type").flatMap(_.headOption)
+  def getField(key: String): Seq[String] = fields.get(key.toLowerCase).getOrElse(Seq.empty)
+
+  def contentLength: Option[Int]  = getField("content-length").headOption.flatMap(_.toIntOption)
+  def contentType: Option[String] = getField("content-type").headOption
   def mimeType: Option[String]    = contentType.map(_.split(";")(0))
   def charset: Option[String]     = contentType.flatMap(_.split(";", 2).lift(1)).map(_.split("=", 2)(1))
   def cookies: Map[String, String] = {
-    val list: Seq[String] = fields.get("cookie").getOrElse(Seq.empty)
+    val list: Seq[String] = getField("cookie")
     list
       .flatMap(_.split(";"))
       .map(_.trim)
