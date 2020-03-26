@@ -10,14 +10,21 @@ case class HttpRequestLine(
     uri.split('?')(0)
   }
 
-  def getQueries: Map[String, String] = {
-    def splitAmpersand(query: String): Map[String, String] = {
+  def getQueries: Map[String, Seq[String]] = {
+    def splitAmpersand(query: String): Map[String, Seq[String]] = {
       query
         .split('&')
-        .map { key_value =>
-          val Array(key, value) = key_value.split('=')
-          key -> value
+        .toList
+        .filter(_ != "")
+        .flatMap { key_value =>
+          key_value.split('=').toList match {
+            case key :: value :: Nil if key != "" => List(key -> value)
+            case _                                => Nil
+          }
         }
+        .groupBy(_._1)
+        .view
+        .mapValues(_.map(_._2))
         .toMap
     }
 
@@ -47,7 +54,7 @@ case class HttpRequestLine(
 object HttpRequestLine {
 
   def fromString(line: String): HttpRequestLine = {
-    val Array(method, uri, httpVersion) = line.split(" ")
+    val Array(method, uri, httpVersion) = line.split(' ')
     HttpRequestLine(HttpMethod.fromString(method), uri, httpVersion)
   }
 
