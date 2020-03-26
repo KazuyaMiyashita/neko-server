@@ -3,7 +3,7 @@ import neko.core.server.ServerSocketHandler
 object Main extends App {
 
   val requestHandler      = new TelnetRequestHandler
-  val serverSocketHandler = new ServerSocketHandler(requestHandler, 2222)
+  val serverSocketHandler = new ServerSocketHandler(requestHandler, 23)
   serverSocketHandler.start()
 
   println("press enter to terminate")
