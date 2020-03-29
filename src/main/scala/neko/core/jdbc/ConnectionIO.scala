@@ -58,12 +58,9 @@ object ConnectionIO {
       val aio = actions.foldLeft(ConnectionIO.either[E, Seq[T]](_ => Right(Seq.empty))) {
         case (acc, io) =>
           io.run(c) match {
-            case Success(either) =>
-              either match {
-                case Right(v) => acc.map(v +: _)
-                case Left(v)  => ConnectionIO(_ => Success(Left(v)))
-              }
-            case Failure(e) => ConnectionIO(_ => Failure(e))
+            case Success(Right(v)) => acc.map(v +: _)
+            case Success(Left(v))  => ConnectionIO(_ => Success(Left(v)))
+            case Failure(e)        => ConnectionIO(_ => Failure(e))
           }
       }
 
