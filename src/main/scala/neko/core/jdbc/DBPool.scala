@@ -1,7 +1,8 @@
 package neko.core.jdbc
 
 import java.sql.Connection
+import scala.util.Try
 
 trait DBPool {
-  def getConnection(): Connection
+  def getConnection(): Try[Connection]
 }

@@ -6,7 +6,7 @@ import java.sql.{ResultSet, Timestamp}
 
 import scala.util.Try
 
-import neko.core.jdbc.{ConnectionIO, DBPool}
+import neko.core.jdbc.{ConnectionIO, ConnectionIORunner}
 import neko.core.jdbc.query._
 
 import neko.chat.application.entity.{User, Message}
@@ -14,18 +14,17 @@ import neko.chat.application.entity.User.{UserId, UserName}
 import neko.chat.application.entity.Message.{MessageId, MessageBody}
 import neko.chat.application.repository.MessageRepository
 import neko.chat.application.repository.MessageRepository.MessageResponse
-import neko.core.jdbc.DBPool
 
 class MessageRepositoryImpl(
-    dbPool: DBPool,
+    connctionIORunner: ConnectionIORunner,
     clock: Clock
 ) extends MessageRepository {
 
   import MessageRepositoryImpl._
 
   override def fetchLatest50messages(): Try[List[MessageResponse]] = {
-    fetchLatest50messagesIO
-      .runReadOnly(dbPool.getConnection())
+    connctionIORunner
+      .runReadOnly(fetchLatest50messagesIO)
       .map(_.merge)
   }
 

@@ -4,7 +4,7 @@ import java.sql.Connection
 import scala.util.{Try, Success, Failure}
 import scala.util.chaining._
 
-case class ConnectionIO[+E, T](private val run: Connection => Try[Either[E, T]]) {
+case class ConnectionIO[+E, T](private[jdbc] val run: Connection => Try[Either[E, T]]) {
   def map[U](f: T => U): ConnectionIO[E, U] = ConnectionIO(run.andThen(t => t.map(e => e.map(f))))
   def flatMap[EE >: E, U](f: T => ConnectionIO[EE, U]): ConnectionIO[EE, U] = ConnectionIO { c =>
     run(c).flatMap {
