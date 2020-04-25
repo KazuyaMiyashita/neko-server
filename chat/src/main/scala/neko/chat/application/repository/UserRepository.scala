@@ -1,7 +1,6 @@
 package neko.chat.application.repository
 
-import scala.util.Try
-
+import neko.core.jdbc.ConnectionIO
 import neko.chat.application.entity.{User, Email, RawPassword, HashedPassword}
 import neko.chat.application.entity.User.{UserId, UserName}
 
@@ -11,15 +10,15 @@ trait UserRepository {
       userName: UserName,
       email: Email,
       rawPassword: RawPassword
-  ): Try[Either[UserRepository.SaveNewUserError, User]]
+  ): ConnectionIO[UserRepository.SaveNewUserError, User]
 
   def createHashedPassword(rawPassword: RawPassword): HashedPassword
 
-  def fetchUserIdBy(email: Email, rawPassword: RawPassword): Try[Option[UserId]]
+  def fetchUserIdBy(email: Email, rawPassword: RawPassword): ConnectionIO[Nothing, Option[UserId]]
 
-  def fetchBy(userId: UserId): Try[Option[User]]
+  def fetchBy(userId: UserId): ConnectionIO[Nothing, Option[User]]
 
-  def updateUserName(userId: UserId, newUserName: UserName): Try[Unit]
+  def updateUserName(userId: UserId, newUserName: UserName): ConnectionIO[Nothing, Unit]
 
 }
 

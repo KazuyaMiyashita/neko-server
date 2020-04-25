@@ -1,17 +1,20 @@
 package neko.chat.application.usecase
 
 import scala.util.{Success, Failure}
-
+import neko.core.jdbc.ConnectionIORunner
 import neko.chat.application.entity.{User, Email, RawPassword}
 import neko.chat.application.entity.User.UserName
 import neko.chat.application.repository.UserRepository
 
-class CreateUser(userRepository: UserRepository) {
+class CreateUser(
+    userRepository: UserRepository,
+    connectionIORunner: ConnectionIORunner
+) {
   def execute(request: CreateUser.Request): Either[CreateUser.Error, User] = {
     for {
       t <- request.validate
       (userName, email, rawPassword) = (t._1, t._2, t._3)
-      user <- userRepository.saveNewUser(userName, email, rawPassword) match {
+      user <- connectionIORunner.runTx(userRepository.saveNewUser(userName, email, rawPassword)) match {
         case Failure(e) => Left(CreateUser.Error.Unknown(e))
         case Success(v) =>
           v match {

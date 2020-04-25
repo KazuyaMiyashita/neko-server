@@ -1,18 +1,22 @@
 package neko.chat.application.usecase
 
+import java.time.Instant
+import scala.util.{Success, Failure}
+import neko.core.jdbc.ConnectionIORunner
 import neko.chat.application.entity.{Message, User}
 import neko.chat.application.repository.MessageRepository
-import java.time.Instant
-import scala.util.Failure
-import scala.util.Success
 
-class GetMessages(messageRepository: MessageRepository) {
+class GetMessages(
+    messageRepository: MessageRepository,
+    connectionIORunner: ConnectionIORunner
+) {
 
   def latest50messages(): Either[GetMessages.Error, List[GetMessages.MessageResponse]] = {
-    messageRepository.fetchLatest50messages() match {
+    connectionIORunner.runReadOnly(messageRepository.fetchLatest50messages()) match {
       case Failure(e) => Left(GetMessages.Error.Unknown(e))
       case Success(vs) => {
-        Right(vs.map { v =>
+        val a = vs.merge
+        Right(a.map { v =>
           val MessageRepository.MessageResponse(message, user) = v
           GetMessages.MessageResponse(message.id, message.body, user.name, message.createdAt)
         })

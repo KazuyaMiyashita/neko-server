@@ -1,7 +1,6 @@
 package neko.chat.application.repository
 
-import scala.util.Try
-
+import neko.core.jdbc.ConnectionIO
 import neko.chat.application.entity.{Message, User}
 import neko.chat.application.entity.User.UserId
 import neko.chat.application.entity.Message.MessageBody
@@ -10,9 +9,9 @@ trait MessageRepository {
 
   import MessageRepository._
 
-  def fetchLatest50messages(): Try[List[MessageResponse]]
+  def fetchLatest50messages(): ConnectionIO[Nothing, List[MessageResponse]]
   def createMessageEntity(userId: UserId, body: MessageBody): Message
-  def saveMessage(message: Message): Try[Unit]
+  def saveMessage(message: Message): ConnectionIO[Nothing, Unit]
 
 }
 

@@ -4,9 +4,7 @@ import java.util.UUID
 import java.time.Clock
 import java.sql.{ResultSet, Timestamp}
 
-import scala.util.Try
-
-import neko.core.jdbc.{ConnectionIO, ConnectionIORunner}
+import neko.core.jdbc.ConnectionIO
 import neko.core.jdbc.query._
 
 import neko.chat.application.entity.{User, Message}
@@ -16,38 +14,10 @@ import neko.chat.application.repository.MessageRepository
 import neko.chat.application.repository.MessageRepository.MessageResponse
 
 class MessageRepositoryImpl(
-    connctionIORunner: ConnectionIORunner,
     clock: Clock
 ) extends MessageRepository {
 
-  import MessageRepositoryImpl._
-
-  override def fetchLatest50messages(): Try[List[MessageResponse]] = {
-    connctionIORunner
-      .runReadOnly(fetchLatest50messagesIO)
-      .map(_.merge)
-  }
-
-  override def createMessageEntity(userId: UserId, body: MessageBody): Message = {
-    Message(
-      id = MessageId(UUID.randomUUID()),
-      userId = userId,
-      body = body,
-      createdAt = clock.instant()
-    )
-  }
-
-  override def saveMessage(message: Message): Try[Unit] = {
-    saveMessageIO(message)
-      .runTx(dbPool.getConnection())
-      .map(_.merge)
-  }
-
-}
-
-object MessageRepositoryImpl {
-
-  def fetchLatest50messagesIO(): ConnectionIO[Nothing, List[MessageResponse]] = ConnectionIO.right { conn =>
+  override def fetchLatest50messages(): ConnectionIO[Nothing, List[MessageResponse]] = ConnectionIO.right { conn =>
     val query =
       """select * from messages as m
         |  inner join users u
@@ -74,7 +44,16 @@ object MessageRepositoryImpl {
     list(pstmt, mapping)(conn)
   }
 
-  def saveMessageIO(message: Message): ConnectionIO[Nothing, Unit] = ConnectionIO.right { conn =>
+  override def createMessageEntity(userId: UserId, body: MessageBody): Message = {
+    Message(
+      id = MessageId(UUID.randomUUID()),
+      userId = userId,
+      body = body,
+      createdAt = clock.instant()
+    )
+  }
+
+  override def saveMessage(message: Message): ConnectionIO[Nothing, Unit] = ConnectionIO.right { conn =>
     val query =
       """insert into messages(id, user_id, body, created_at) values (?, ?, ?, ?);"""
     val stmt = conn.prepareStatement(query)

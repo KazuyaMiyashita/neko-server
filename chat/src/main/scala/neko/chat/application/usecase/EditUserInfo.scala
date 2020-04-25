@@ -1,14 +1,18 @@
 package neko.chat.application.usecase
 
+import neko.core.jdbc.ConnectionIORunner
 import neko.chat.application.entity.User.{UserId, UserName}
 import neko.chat.application.repository.UserRepository
 
-class EditUserInfo(userRepository: UserRepository) {
+class EditUserInfo(
+    userRepository: UserRepository,
+    connectionIORunner: ConnectionIORunner
+) {
   def execute(request: EditUserInfo.Request): Either[EditUserInfo.Error, Unit] = {
     for {
       newUserName <- request.validate
     } yield {
-      userRepository.updateUserName(request.userId, newUserName)
+      connectionIORunner.runTx(userRepository.updateUserName(request.userId, newUserName))
       ()
     }
   }

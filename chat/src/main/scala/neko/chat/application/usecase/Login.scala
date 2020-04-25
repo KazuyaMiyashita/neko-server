@@ -1,30 +1,31 @@
 package neko.chat.application.usecase
 
 import scala.util.{Success, Failure}
-
+import neko.core.jdbc.ConnectionIORunner
 import neko.chat.application.entity.{Email, Token, RawPassword}
 import neko.chat.application.repository.{UserRepository, TokenRepository}
 
 class Login(
     userRepository: UserRepository,
-    tokenRepositoty: TokenRepository
+    tokenRepositoty: TokenRepository,
+    connectionIORunner: ConnectionIORunner
 ) {
 
   def execute(request: Login.Request): Either[Login.Error, Token] = {
     for {
       t <- request.validate
       (email, rawPassword) = (t._1, t._2)
-      userId <- userRepository.fetchUserIdBy(email, rawPassword) match {
+      userId <- connectionIORunner.runReadOnly(userRepository.fetchUserIdBy(email, rawPassword)) match {
         case Failure(e) => Left(Login.Error.Unknown(e))
         case Success(v) =>
-          v match {
+          v.merge match {
             case None         => Left(Login.Error.UserNotExist)
             case Some(userId) => Right(userId)
           }
       }
     } yield {
       val token = tokenRepositoty.createToken(userId)
-      tokenRepositoty.saveToken(userId, token)
+      connectionIORunner.runTx(tokenRepositoty.saveToken(userId, token))
       token
     }
   }

@@ -2,7 +2,6 @@ package neko.core.jdbc
 
 import java.sql.Connection
 import scala.util.{Try, Success, Failure}
-import scala.util.chaining._
 
 case class ConnectionIO[+E, T](private[jdbc] val run: Connection => Try[Either[E, T]]) {
   def map[U](f: T => U): ConnectionIO[E, U] = ConnectionIO(run.andThen(t => t.map(e => e.map(f))))
@@ -20,27 +19,6 @@ case class ConnectionIO[+E, T](private[jdbc] val run: Connection => Try[Either[E
     }
   }
 
-  def runTx(conn: Connection): Try[Either[E, T]] = {
-    Try {
-      conn.setAutoCommit(false)
-      run(conn).tap {
-        case Success(v) if v.isRight => conn.commit()
-        case _                       => conn.rollback()
-      }
-    }.flatten.tap(_ => conn.close())
-  }
-  def runReadOnly(conn: Connection): Try[Either[E, T]] = {
-    Try {
-      conn.setReadOnly(true)
-      run(conn)
-    }.flatten.tap(_ => conn.close())
-  }
-  def runRollback(conn: Connection): Try[Either[E, T]] = {
-    Try {
-      conn.setAutoCommit(false)
-      run(conn).tap(_ => conn.rollback())
-    }.flatten.tap(_ => conn.close())
-  }
 }
 
 object ConnectionIO {
