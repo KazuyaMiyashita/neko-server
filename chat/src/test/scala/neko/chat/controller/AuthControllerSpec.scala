@@ -18,7 +18,7 @@ class AuthControllerSpec extends FlatSpec with Matchers {
   val controllerConponent: ControllerComponent = ControllerComponent.create("http://localhost:8000")
 
   "POST /auth/login" should "200" in {
-    val stubLogin = new Login(null, null) {
+    val stubLogin = new Login(null, null, null) {
       override def execute(request: Login.Request): Either[Login.Error, Token] =
         Right(Token("stub-token-stub-token"))
     }
@@ -52,7 +52,7 @@ class AuthControllerSpec extends FlatSpec with Matchers {
   }
 
   "POST /auth/logout" should "200" in {
-    val stubLogout = new Logout(null) {
+    val stubLogout = new Logout(null, null) {
       override def execute(token: Token): Boolean = true
     }
     val authController = new AuthController(
@@ -82,7 +82,7 @@ class AuthControllerSpec extends FlatSpec with Matchers {
   }
 
   "POST /auth/session" should "200" in {
-    val stubFetchUserIdByToken = new FetchUserIdByToken(null) {
+    val stubFetchUserIdByToken = new FetchUserIdByToken(null, null) {
       override def execute(token: Token): Option[UserId] = {
         Some(UserId(UUID.fromString("53247465-de8c-47e8-ae01-d46d04db5dc2")))
       }

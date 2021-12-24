@@ -20,7 +20,7 @@ class UserControllerSpec extends FlatSpec with Matchers {
   val controllerConponent: ControllerComponent = ControllerComponent.create("http://localhost:8000")
 
   "POST /users" should "200" in {
-    val stubCreateUser = new CreateUser(null) {
+    val stubCreateUser = new CreateUser(null, null) {
       override def execute(request: CreateUser.Request): Either[CreateUser.Error, User] =
         Right(User(UserId(UUID.randomUUID()), UserName("Foo"), Instant.parse("2020-01-01T10:00:00.000Z")))
     }
@@ -55,7 +55,7 @@ class UserControllerSpec extends FlatSpec with Matchers {
   }
 
   "POST /users" should "400 (one error)" in {
-    val stubCreateUser = new CreateUser(null) {
+    val stubCreateUser = new CreateUser(null, null) {
       override def execute(request: CreateUser.Request): Either[CreateUser.Error, User] =
         Left(CreateUser.Error.ValidateErrors(CreateUser.ValidateError.UserNameTooLong))
     }
@@ -98,7 +98,7 @@ class UserControllerSpec extends FlatSpec with Matchers {
   "POST /users" should "400 (three errors)" in {
     import CreateUser.ValidateError._
 
-    val stubCreateUser = new CreateUser(null) {
+    val stubCreateUser = new CreateUser(null, null) {
       override def execute(request: CreateUser.Request): Either[CreateUser.Error, User] =
         Left(CreateUser.Error.ValidateErrors(UserNameTooLong, EmailWrongFormat, RawPasswordTooShort))
     }
@@ -141,12 +141,12 @@ class UserControllerSpec extends FlatSpec with Matchers {
   }
 
   "POST /edit" should "200" in {
-    val stubFetchUserIdByToken = new FetchUserIdByToken(null) {
+    val stubFetchUserIdByToken = new FetchUserIdByToken(null, null) {
       override def execute(token: Token): Option[UserId] = {
         Some(UserId(UUID.randomUUID()))
       }
     }
-    val stubEditUserInfo = new EditUserInfo(null) {
+    val stubEditUserInfo = new EditUserInfo(null, null) {
       override def execute(request: EditUserInfo.Request): Either[EditUserInfo.Error, Unit] = {
         Right(())
       }

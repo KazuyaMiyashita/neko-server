@@ -14,10 +14,11 @@ import neko.chat.application.repository.MessageRepository.MessageResponse
 
 import neko.chat.infra.db.share.TestDBPool
 import org.scalatest._
+import neko.core.jdbc.TestConnectionIORunner
 
 class MessageRepositoryImplSpec extends FunSuite with Matchers {
 
-  def conn() = TestDBPool.getConnection()
+  val connectionIORunner = new TestConnectionIORunner(TestDBPool)
 
   test("メッセージを投稿できる") {
 
